@@ -1,22 +1,66 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Printer, Search } from "lucide-react";
+import { Eye, Pencil, Plus, Printer, Search, Trash2 } from "lucide-react";
 import { api, errMsg } from "@/lib/api";
-import { rp, fdate, RECEIVE_STATUSES } from "@/lib/format";
+import { rp, num, fdate, whName, qtyUnit, RECEIVE_STATUSES } from "@/lib/format";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PageHeader, Sel, Empty } from "@/components/common";
 import { PODetail } from "@/components/purchases/PODetail";
 import { PODialog } from "@/components/purchases/PODialog";
 import { useDocs } from "@/components/docs/useDocs";
 
-const STATUS_COLOR = { Draft: "text-slate-400", "Dalam Proses": "text-sky-300", "Barang Diterima": "text-emerald-400", "Barang Belum Lengkap": "text-orange-300", "Barang Direject Semua": "text-red-400" };
+const BADGE = {
+  Draft: ["Draft", "bg-slate-500/15 text-slate-300 border-slate-500/40"],
+  "Dalam Proses": ["Dalam Proses", "bg-sky-500/15 text-sky-300 border-sky-500/40"],
+  "Barang Diterima": ["Diterima", "bg-emerald-500/15 text-emerald-300 border-emerald-500/40"],
+  "Barang Belum Lengkap": ["Belum Lengkap", "bg-orange-500/15 text-orange-300 border-orange-500/40"],
+  "Barang Direject Semua": ["Rejected", "bg-red-500/15 text-red-300 border-red-500/40"],
+};
+
+export const StatusBadge = ({ status, testid }) => {
+  const [label, cls] = BADGE[status] || [status || "-", BADGE.Draft[1]];
+  return <span data-testid={testid} className={`inline-block whitespace-nowrap rounded border px-2 py-0.5 font-mono text-[11px] ${cls}`}>{label}</span>;
+};
+
+const summary = (items = []) => {
+  if (!items.length) return "-";
+  const f = items[0];
+  const first = `${num(f.qty)} ${qtyUnit(f)} ${f.name}`;
+  return items.length > 1 ? `${first} +${items.length - 1} item` : first;
+};
+
+function PORow({ p, i, isAdmin, warehouses, onOpen, onPrint, onEdit, onVoid }) {
+  return (
+    <tr data-testid={`po-row-${i}`} className="cursor-pointer" onClick={() => onOpen(p)}>
+      <td className="w-px whitespace-nowrap">
+        <span className="font-mono font-semibold text-orange-300" data-testid={`po-row-number-${i}`}>{p.po_no}</span>
+        <span className="font-mono text-xs text-muted-foreground"> | {fdate(p.date)}</span>
+      </td>
+      <td className="w-px whitespace-nowrap">{p.supplier_name}</td>
+      <td className="w-px whitespace-nowrap text-xs">{whName(warehouses, p.warehouse)}</td>
+      <td className="w-full min-w-[200px]">
+        <div className="line-clamp-1" title={(p.items || []).map((it) => `${num(it.qty)} ${qtyUnit(it)} ${it.name}`).join("\n")}>{summary(p.items)}</div>
+        {p.type === "indent" && <div className="text-[11px] text-muted-foreground">Indent · {p.customer_name}</div>}
+      </td>
+      <td className="w-px whitespace-nowrap"><StatusBadge status={p.receive_status} testid={`po-row-status-${i}`} /></td>
+      {isAdmin && <td className="num w-px" data-testid={`po-row-total-${i}`}>{rp(p.total)}</td>}
+      <td className="w-px whitespace-nowrap text-right" onClick={(e) => e.stopPropagation()}>
+        <Button size="sm" variant="ghost" className="h-7 gap-1 px-2" data-testid={`po-detail-btn-${i}`} onClick={() => onOpen(p)}><Eye className="h-3.5 w-3.5" /> Detail/Terima</Button>
+        <Button size="icon" variant="ghost" className="h-7 w-7" title="Cetak PO" data-testid={`po-print-${i}`} onClick={() => onPrint(p)}><Printer className="h-3.5 w-3.5" /></Button>
+        {isAdmin && <Button size="icon" variant="ghost" className="h-7 w-7" title="Edit PO" data-testid={`po-edit-${i}`} onClick={() => onEdit(p)}><Pencil className="h-3.5 w-3.5" /></Button>}
+        {isAdmin && <Button size="icon" variant="ghost" className="h-7 w-7" title="Void / Hapus" data-testid={`po-void-${i}`} onClick={() => onVoid(p)}><Trash2 className="h-3.5 w-3.5 text-red-400" /></Button>}
+      </td>
+    </tr>
+  );
+}
 
 export default function Purchases() {
   const { isAdmin } = useAuth();
-  const { suppliers } = useData();
+  const { suppliers, warehouses } = useData();
   const { printPO } = useDocs();
   const [fl, setFl] = useState({ q: "", supplier_id: "", status: "", type: "", date_from: "", date_to: "" });
   const [data, setData] = useState({ items: [], summary: {} });
@@ -26,9 +70,14 @@ export default function Purchases() {
 
   const load = useCallback(() => api.get("/purchases", { params: fl }).then((r) => {
     setData(r.data);
-    setSel((cur) => (cur ? r.data.items.find((p) => p.id === cur.id) || null : r.data.items[0] || null));
+    setSel((cur) => (cur ? r.data.items.find((p) => p.id === cur.id) || null : null));
   }).catch((e) => toast.error(errMsg(e))), [fl]);
   useEffect(() => { const t = setTimeout(load, 250); return () => clearTimeout(t); }, [load]);
+
+  const voidPO = async (po) => {
+    if (!window.confirm(`Void / hapus PO ${po.po_no}? Stok yang sudah masuk akan dikoreksi.`)) return;
+    try { await api.post(`/purchases/${po.id}/void`); toast.success("PO di-void"); load(); } catch (e) { toast.error(errMsg(e)); }
+  };
 
   return (
     <div>
@@ -43,31 +92,33 @@ export default function Purchases() {
         <Input type="date" data-testid="po-date-from" value={fl.date_from} onChange={(e) => set("date_from", e.target.value)} />
         <Input type="date" data-testid="po-date-to" value={fl.date_to} onChange={(e) => set("date_to", e.target.value)} />
       </div>
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
-        <div className="panel overflow-hidden">
-          <div className="max-h-[70vh] overflow-y-auto" data-testid="po-list">
-            {data.items.map((p, i) => (
-              <div key={p.id} role="button" tabIndex={0} data-testid={`po-row-${i}`} onClick={() => setSel(p)}
-                className={`block w-full cursor-pointer border-b border-border p-3 text-left transition-colors hover:bg-secondary/50 ${sel?.id === p.id ? "bg-primary/10 border-l-2 border-l-primary" : ""}`}>
-                <div className="flex items-center justify-between gap-2"><span className="font-mono font-semibold text-orange-300">{p.po_no}</span>
-                  <span className="flex items-center gap-2"><span className={`text-xs ${STATUS_COLOR[p.receive_status]}`}>{p.receive_status}</span>
-                    <Button size="icon" variant="ghost" className="h-7 w-7" title="Cetak PO" data-testid={`po-print-${i}`} onClick={(e) => { e.stopPropagation(); printPO(p); }}><Printer className="h-4 w-4" /></Button></span></div>
-                <div className="text-sm">{p.supplier_name}</div>
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>{fdate(p.date)} · {p.type === "indent" ? `Indent · ${p.customer_name}` : "Manual"}</span>
-                  {isAdmin && <span className="font-mono">{rp(p.total)}</span>}
-                </div>
-              </div>
-            ))}
-            {!data.items.length && <Empty text="Belum ada PO" />}
-          </div>
-          <div className="border-t-2 border-primary/60 bg-secondary/60 p-3 font-mono text-sm" data-testid="po-summary">
-            {data.summary.count} PO{isAdmin && ` · Total ${rp(data.summary.total)} · Utang ${rp(data.summary.debt)}`}
-          </div>
+      <div className="panel overflow-hidden">
+        <div className="max-h-[70vh] overflow-auto" data-testid="po-list">
+          <table className="dtable dtable-compact">
+            <thead><tr>
+              <th>No. PO | Tanggal</th><th>Supplier / Pabrik</th><th>Gudang Tujuan</th><th>Ringkasan Item & Qty</th><th>Status</th>
+              {isAdmin && <th className="text-right">Total PO</th>}<th className="text-right">Aksi</th>
+            </tr></thead>
+            <tbody>
+              {data.items.map((p, i) => (
+                <PORow key={p.id} p={p} i={i} isAdmin={isAdmin} warehouses={warehouses} onOpen={setSel} onPrint={printPO}
+                  onEdit={(po) => setDlg({ po })} onVoid={voidPO} />
+              ))}
+            </tbody>
+          </table>
+          {!data.items.length && <Empty text="Belum ada PO" />}
         </div>
-        <div>{sel ? <PODetail po={sel} onChanged={(p) => { if (!p) setSel(null); load(); }} onEdit={(p) => setDlg({ po: p })} /> : <div className="panel"><Empty text="Pilih PO untuk melihat rincian" /></div>}</div>
+        <div className="border-t-2 border-primary/60 bg-secondary/60 px-3 py-2 font-mono text-sm" data-testid="po-summary">
+          {data.summary.count} PO{isAdmin && ` · Total ${rp(data.summary.total)} · Utang ${rp(data.summary.debt)}`}
+        </div>
       </div>
-      <PODialog open={!!dlg} po={dlg?.po} onClose={() => setDlg(null)} onSaved={(p) => { setSel(p); load(); }} />
+      <Dialog open={!!sel} onOpenChange={(o) => !o && setSel(null)}>
+        <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto" data-testid="po-detail-modal">
+          <DialogHeader><DialogTitle className="font-heading text-2xl uppercase">Rincian PO</DialogTitle></DialogHeader>
+          {sel && <PODetail po={sel} onChanged={(p) => { if (!p) setSel(null); load(); }} onEdit={(p) => { setSel(null); setDlg({ po: p }); }} />}
+        </DialogContent>
+      </Dialog>
+      <PODialog open={!!dlg} po={dlg?.po} onClose={() => setDlg(null)} onSaved={() => load()} />
     </div>
   );
 }

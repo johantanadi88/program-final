@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Ban, Pencil, Printer } from "lucide-react";
 import { api, errMsg } from "@/lib/api";
-import { rp, num, fdate, bendLabel, whName, RECEIVE_STATUSES } from "@/lib/format";
+import { rp, num, fdate, bendLabel, whName, qtyUnit, RECEIVE_STATUSES } from "@/lib/format";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import { Button } from "@/components/ui/button";
@@ -72,19 +72,25 @@ export function PODetail({ po, onChanged, onEdit }) {
           </div>
         </div>
         <div className="mt-3 overflow-x-auto">
-          <table className="dtable">
-            <thead><tr><th>Barang</th><th>Qty</th><th>Panjang</th><th>Total Meter</th><th>Lurus/Lengkung</th><th>Diterima</th>{isAdmin && <th className="text-right">HPP</th>}{isAdmin && <th className="text-right">Subtotal</th>}</tr></thead>
+          <table className="dtable dtable-compact" data-testid="po-detail-table">
+            <thead><tr>
+              <th>No</th><th>Kategori / Merk</th><th>Nama Barang</th><th>Spesifikasi</th><th className="text-right">Qty</th><th className="text-right">Total Meter</th><th className="text-right">Diterima</th>
+              {isAdmin && <th className="text-right">HPP Satuan</th>}{isAdmin && <th className="text-right">Subtotal</th>}
+            </tr></thead>
             <tbody>
               {po.items.map((it, i) => (
                 <tr key={it.line_id}>
-                  <td>{it.name}{it.color && !it.name.includes(it.color) ? ` · ${it.color}` : ""}</td>
-                  <td className="font-mono whitespace-nowrap" data-testid={`po-detail-qty-${i}`}>{num(it.qty)} {it.unit}</td>
-                  <td className="font-mono">{it.is_length ? `${num(it.length)} m` : "-"}</td>
-                  <td className="font-mono">{it.is_length ? `${num(it.total_meter)} m` : "-"}</td>
-                  <td>{it.is_length ? bendLabel(it.bend) : "-"}</td>
-                  <td className="font-mono">{num(it.received_qty)} {it.unit}</td>
-                  {isAdmin && <td className="num">{rp(it.hpp_unit)}{it.is_length ? "/m" : ""}</td>}
-                  {isAdmin && <td className="num">{rp(it.subtotal)}</td>}
+                  <td className="w-px font-mono">{i + 1}</td>
+                  <td className="w-px whitespace-nowrap text-xs">{it.category_name || "-"}{it.brand ? <div className="text-muted-foreground">{it.brand}</div> : null}</td>
+                  <td className="w-full min-w-[160px]">{it.name}{it.color && !it.name.includes(it.color) ? ` · ${it.color}` : ""}</td>
+                  <td className="w-px whitespace-nowrap text-xs" data-testid={`po-detail-spec-${i}`}>
+                    {it.is_length ? `${num(it.length)} m · ${bendLabel(it.bend)}` : [it.thickness, it.color].filter(Boolean).join(" · ") || "-"}
+                  </td>
+                  <td className="num w-px" data-testid={`po-detail-qty-${i}`}>{num(it.qty)} {qtyUnit(it)}</td>
+                  <td className="num w-px">{it.is_length ? `${num(it.total_meter)} m` : "-"}</td>
+                  <td className="num w-px">{num(it.received_qty)} {qtyUnit(it)}</td>
+                  {isAdmin && <td className="num w-px">{rp(it.hpp_unit)}{it.is_length ? "/m" : ""}</td>}
+                  {isAdmin && <td className="num w-px">{rp(it.subtotal)}</td>}
                 </tr>
               ))}
             </tbody>

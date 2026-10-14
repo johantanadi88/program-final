@@ -1,4 +1,4 @@
-import { rp, num, fdate, bendLabel, whName } from "@/lib/format";
+import { rp, num, fdate, bendLabel, whName, qtyUnit } from "@/lib/format";
 
 const desc = (it) => {
   const spec = [it.brand, it.thickness, it.color].filter((v) => v && !String(it.name || "").includes(v));
@@ -69,7 +69,7 @@ export function PODoc({ po, supplier, settings = {}, warehouses = [], showPrice,
                   {d.spec && <div className="doc-sub">{d.spec}</div>}
                   {d.extra && <div className="doc-sub">{d.extra}</div>}
                 </td>
-                <td className="r" data-testid={`po-doc-qty-${i}`}>{num(it.qty)} {it.unit || "Pcs"}</td>
+                <td className="r" data-testid={`po-doc-qty-${i}`}>{num(it.qty)} {qtyUnit(it)}</td>
                 <td className="r">{it.is_length ? `${num(it.total_meter)} m` : "-"}</td>
                 {showPrice && <td className="r">{rp(it.hpp_unit)}{it.is_length ? "/m" : ""}</td>}
                 {showPrice && <td className="r">{rp(it.subtotal)}</td>}

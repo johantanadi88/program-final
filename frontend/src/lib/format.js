@@ -23,6 +23,7 @@ export const productBend = (p = {}) => ({
 });
 
 export const whName = (whs, code) => whs?.find((w) => w.code === code)?.name || code || "-";
+export const qtyUnit = (it) => (/^(m|meter)$/i.test(it.unit || "") ? (it.is_length ? "Lembar" : "Pcs") : it.unit || "Pcs");
 export const bendLabel = (b) => (b === "lengkung" ? "Lengkung Standar" : "Lurus");
 export const lineQty = (it) =>
   it.is_length ? `${num(it.qty)} ${it.unit} × ${num(it.length)} m = ${num(it.total_meter)} m` : `${num(it.qty)} ${it.unit || "Pcs"}`;

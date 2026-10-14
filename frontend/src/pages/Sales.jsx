@@ -11,6 +11,7 @@ import { SaleDetailDialog } from "@/components/sales/SaleDetailDialog";
 import { SaleEditDialog } from "@/components/sales/SaleEditDialog";
 import { DeliveryDialog, PaymentDialog } from "@/components/sales/SaleDialogs";
 import { useDocs } from "@/components/docs/useDocs";
+import { useSort } from "@/components/SortTh";
 
 const INIT = { q: "", customer_id: "", status: "", payment_status: "", date_field: "date", date_from: "", date_to: "" };
 
@@ -41,6 +42,11 @@ export default function Sales() {
   const [edit, setEdit] = useState(null);
   const [deliver, setDeliver] = useState(null);
   const [pay, setPay] = useState(null);
+  const { sorted, th } = useSort(data.items, {
+    status: (s) => STATUS[s.order_status]?.label || s.order_status, invoice: (s) => s.invoice_no, date: (s) => s.date,
+    customer: (s) => s.customer?.name, delivery: (s) => s.delivery_date, sj: (s) => s.deliveries?.length || 0,
+    total: (s) => Number(s.grand_total || 0), balance: (s) => Number(s.balance || 0), payment: (s) => s.payment_status,
+  }, { id: "sales" });
 
   const load = useCallback(() => api.get("/sales", { params: fl }).then((r) => setData(r.data)).catch((e) => toast.error(errMsg(e))), [fl]);
   useEffect(() => { const t = setTimeout(load, 250); return () => clearTimeout(t); }, [load]);
@@ -56,9 +62,9 @@ export default function Sales() {
       <Filters fl={fl} setFl={setFl} customers={customers} />
       <div className="panel overflow-x-auto" data-testid="sales-table">
         <table className="dtable">
-          <thead><tr><th>Status</th><th>No. Nota</th><th>Tanggal</th><th>Pelanggan</th><th>Tgl Pengantaran</th><th>Surat Jalan</th><th className="text-right">Total</th><th className="text-right">Sisa</th><th>Bayar</th><th className="text-right">Aksi</th></tr></thead>
+          <thead><tr>{th("status", "Status")}{th("invoice", "No. Nota")}{th("date", "Tanggal")}{th("customer", "Pelanggan")}{th("delivery", "Tgl Pengantaran")}{th("sj", "Surat Jalan")}{th("total", "Total", "text-right")}{th("balance", "Sisa", "text-right")}{th("payment", "Bayar")}<th className="text-right">Aksi</th></tr></thead>
           <tbody>
-            {data.items.map((s, i) => (
+            {sorted.map((s, i) => (
               <tr key={s.id} className="cursor-pointer" onClick={() => openDetail(s)} data-testid={`sales-row-${i}`}>
                 <td><StatusDot status={s.order_status} testid={`sales-status-dot-${i}`} /></td>
                 <td className="font-mono text-orange-300">{s.invoice_no}</td>

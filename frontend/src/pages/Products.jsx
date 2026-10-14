@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PageHeader, Field, Sel, Empty } from "@/components/common";
 import EntityManager from "@/components/EntityManager";
+import { useSort } from "@/components/SortTh";
 
 const UNITS = ["Lembar", "Batang", "Pcs", "Kotak", "Bungkus", "Meter", "Roll"];
 
@@ -83,6 +84,11 @@ function ProductTable() {
   const [cat, setCat] = useState("");
   const [q, setQ] = useState("");
   const rows = products.filter((p) => (!cat || p.category_id === cat) && (!q || p.name.toLowerCase().includes(q.toLowerCase())));
+  const { sorted, th } = useSort(rows, {
+    name: (p) => p.name, category: (p) => p.category_name, price: (p) => Number(p.price || 0),
+    bend: (p) => (productBend(p).is_lengkung ? Number(productBend(p).upah_lengkung || 0) : 0), hpp: (p) => Number(p.hpp || 0),
+    margin: (p) => (p.price ? (p.price - p.hpp) / p.price : null), g1: (p) => Number(p.stock?.G1 || 0), g2: (p) => Number(p.stock?.G2 || 0),
+  }, { id: "products" });
   const del = async (p) => { if (!window.confirm(`Hapus ${p.name}?`)) return; try { await api.delete(`/products/${p.id}`); refresh(); } catch (e) { toast.error(errMsg(e)); } };
   return (
     <div className="panel">
@@ -93,9 +99,9 @@ function ProductTable() {
       </div>
       <div className="overflow-x-auto">
         <table className="dtable">
-          <thead><tr><th>Produk</th><th>Kategori</th><th className="text-right">Harga Jual</th><th className="text-right">Upah Lengkung</th><th className="text-right">HPP</th><th className="text-right">Margin</th><th className="text-right">G1</th><th className="text-right">G2</th><th /></tr></thead>
+          <thead><tr>{th("name", "Produk")}{th("category", "Kategori")}{th("price", "Harga Jual", "text-right")}{th("bend", "Upah Lengkung", "text-right")}{th("hpp", "HPP", "text-right")}{th("margin", "Margin", "text-right")}{th("g1", "G1", "text-right")}{th("g2", "G2", "text-right")}<th /></tr></thead>
           <tbody>
-            {rows.map((p, i) => (
+            {sorted.map((p, i) => (
               <tr key={p.id} data-testid={`products-row-${i}`}>
                 <td>{p.name}<div className="text-xs text-muted-foreground">{p.is_length ? `${num(p.length)} m / ${p.unit}` : p.unit}{p.alt_units?.length ? ` · ${p.alt_units.map((a) => `${a.unit} isi ${a.ratio}`).join(", ")}` : ""}</div></td>
                 <td className="text-xs">{p.category_name}</td>

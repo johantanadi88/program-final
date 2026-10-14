@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sel, StatusDot, ModeTag } from "@/components/common";
 import { useDocs } from "@/components/docs/useDocs";
+import { useSort } from "@/components/SortTh";
 
 const Info = ({ l, v, testid }) => (
   <div><div className="font-mono text-[10px] uppercase text-muted-foreground">{l}</div><div className="text-sm" data-testid={testid}>{v || "-"}</div></div>
@@ -17,6 +18,11 @@ export function SaleDetailDialog({ sale, onClose, onChanged, onDeliver, onPay, o
   const { isAdmin } = useAuth();
   const { warehouses } = useData();
   const { printNota, printSJ, sendWA } = useDocs();
+  const n = (v) => Number(v || 0);
+  const { sorted, th } = useSort(sale?.items, {
+    name: (it) => it.name, qty: (it) => n(it.qty), status: (it) => (it.is_length ? bendLabel(it.bend) : ""), price: (it) => n(it.price),
+    total: (it) => n(it.line_total), delivered: (it) => n(it.delivered_qty), hpp: (it) => n(it.hpp_total),
+  }, { id: "sale-detail" });
   if (!sale) return null;
   const act = async (fn, msg) => {
     try { const r = await fn(); toast.success(msg); onChanged?.(r?.data); } catch (e) { toast.error(errMsg(e)); }
@@ -48,9 +54,9 @@ export function SaleDetailDialog({ sale, onClose, onChanged, onDeliver, onPay, o
         </div>
         <div className="overflow-x-auto panel">
           <table className="dtable">
-            <thead><tr><th>Item</th><th>Qty / Ukuran</th><th>Status</th><th className="text-right">Harga</th><th className="text-right">Subtotal</th><th className="text-right">Terkirim</th>{isAdmin && <th className="text-right">HPP</th>}</tr></thead>
+            <thead><tr>{th("name", "Item")}{th("qty", "Qty / Ukuran")}{th("status", "Status")}{th("price", "Harga", "text-right")}{th("total", "Subtotal", "text-right")}{th("delivered", "Terkirim", "text-right")}{isAdmin && th("hpp", "HPP", "text-right")}</tr></thead>
             <tbody>
-              {sale.items.map((it, i) => (
+              {sorted.map((it, i) => (
                 <tr key={it.line_id}>
                   <td><div className="font-medium">{it.name}</div><div className="mt-1 flex gap-1"><ModeTag mode={it.mode} wh={it.warehouse} />{it.po_no && <span className="tag tag-ready">{it.po_no}</span>}</div>
                     {it.bend_subtotal > 0 && <div className="mt-1 font-mono text-[11px] text-orange-200">[ Rincian Upah Lengkung: {num(it.qty)} {it.unit} x {rp(it.bend_fee)} = {rp(it.bend_subtotal)} ]</div>}</td>

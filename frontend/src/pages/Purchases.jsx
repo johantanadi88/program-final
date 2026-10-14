@@ -12,6 +12,7 @@ import { PageHeader, Sel, Empty } from "@/components/common";
 import { PODetail } from "@/components/purchases/PODetail";
 import { PODialog } from "@/components/purchases/PODialog";
 import { useDocs } from "@/components/docs/useDocs";
+import { useSort } from "@/components/SortTh";
 
 const BADGE = {
   Draft: ["Draft", "bg-slate-500/15 text-slate-300 border-slate-500/40"],
@@ -67,6 +68,10 @@ export default function Purchases() {
   const [sel, setSel] = useState(null);
   const [dlg, setDlg] = useState(null);
   const set = (k, v) => setFl({ ...fl, [k]: v });
+  const { sorted, th } = useSort(data.items, {
+    date: (p) => `${p.date} ${p.po_no}`, supplier: (p) => p.supplier_name, warehouse: (p) => whName(warehouses, p.warehouse),
+    items: (p) => summary(p.items), status: (p) => p.receive_status, total: (p) => Number(p.total || 0),
+  }, { id: "po" });
 
   const load = useCallback(() => api.get("/purchases", { params: fl }).then((r) => {
     setData(r.data);
@@ -96,11 +101,11 @@ export default function Purchases() {
         <div className="max-h-[70vh] overflow-auto" data-testid="po-list">
           <table className="dtable dtable-compact">
             <thead><tr>
-              <th>No. PO | Tanggal</th><th>Supplier / Pabrik</th><th>Gudang Tujuan</th><th>Ringkasan Item & Qty</th><th>Status</th>
-              {isAdmin && <th className="text-right">Total PO</th>}<th className="text-right">Aksi</th>
+              {th("date", "No. PO | Tanggal")}{th("supplier", "Supplier / Pabrik")}{th("warehouse", "Gudang Tujuan")}{th("items", "Ringkasan Item & Qty")}{th("status", "Status")}
+              {isAdmin && th("total", "Total PO", "text-right")}<th className="text-right">Aksi</th>
             </tr></thead>
             <tbody>
-              {data.items.map((p, i) => (
+              {sorted.map((p, i) => (
                 <PORow key={p.id} p={p} i={i} isAdmin={isAdmin} warehouses={warehouses} onOpen={setSel} onPrint={printPO}
                   onEdit={(po) => setDlg({ po })} onVoid={voidPO} />
               ))}

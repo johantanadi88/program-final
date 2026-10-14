@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, Sel } from "@/components/common";
 import { useDocs } from "@/components/docs/useDocs";
+import { useSort } from "@/components/SortTh";
 
 function ReceivePanel({ po, onChanged }) {
   const { warehouses, refresh } = useData();
@@ -51,6 +52,12 @@ export function PODetail({ po, onChanged, onEdit }) {
   const { isAdmin } = useAuth();
   const { warehouses } = useData();
   const { printPO } = useDocs();
+  const n = (v) => Number(v || 0);
+  const { sorted, th } = useSort(po.items.map((it, i) => ({ ...it, _no: i + 1 })), {
+    no: (it) => it._no, category: (it) => `${it.category_name || ""} ${it.brand || ""}`.trim(), name: (it) => it.name,
+    spec: (it) => (it.is_length ? n(it.length) : [it.thickness, it.color].filter(Boolean).join(" ")), qty: (it) => n(it.qty),
+    meter: (it) => n(it.total_meter), received: (it) => n(it.received_qty), hpp: (it) => n(it.hpp_unit), subtotal: (it) => n(it.subtotal),
+  }, { id: "po-detail" });
   const voidPO = async () => {
     if (!window.confirm(`Void / hapus PO ${po.po_no}? Stok yang sudah masuk akan dikoreksi.`)) return;
     try { await api.post(`/purchases/${po.id}/void`); toast.success("PO di-void"); onChanged(null); } catch (e) { toast.error(errMsg(e)); }
@@ -74,13 +81,13 @@ export function PODetail({ po, onChanged, onEdit }) {
         <div className="mt-3 overflow-x-auto">
           <table className="dtable dtable-compact" data-testid="po-detail-table">
             <thead><tr>
-              <th>No</th><th>Kategori / Merk</th><th>Nama Barang</th><th>Spesifikasi</th><th className="text-right">Qty</th><th className="text-right">Total Meter</th><th className="text-right">Diterima</th>
-              {isAdmin && <th className="text-right">HPP Satuan</th>}{isAdmin && <th className="text-right">Subtotal</th>}
+              {th("no", "No")}{th("category", "Kategori / Merk")}{th("name", "Nama Barang")}{th("spec", "Spesifikasi")}{th("qty", "Qty", "text-right")}{th("meter", "Total Meter", "text-right")}{th("received", "Diterima", "text-right")}
+              {isAdmin && th("hpp", "HPP Satuan", "text-right")}{isAdmin && th("subtotal", "Subtotal", "text-right")}
             </tr></thead>
             <tbody>
-              {po.items.map((it, i) => (
+              {sorted.map((it, i) => (
                 <tr key={it.line_id}>
-                  <td className="w-px font-mono">{i + 1}</td>
+                  <td className="w-px font-mono">{it._no}</td>
                   <td className="w-px whitespace-nowrap text-xs">{it.category_name || "-"}{it.brand ? <div className="text-muted-foreground">{it.brand}</div> : null}</td>
                   <td className="w-full min-w-[160px]">{it.name}{it.color && !it.name.includes(it.color) ? ` · ${it.color}` : ""}</td>
                   <td className="w-px whitespace-nowrap text-xs" data-testid={`po-detail-spec-${i}`}>

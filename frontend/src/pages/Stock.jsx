@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PageHeader, Sel, Field, Empty } from "@/components/common";
+import { useSort } from "@/components/SortTh";
 
 function TransferDialog({ open, onClose, product, onDone }) {
   const { products, warehouses } = useData();
@@ -47,6 +48,15 @@ export default function Stock() {
   const loadLogs = useCallback(() => api.get("/stock/transfers").then((r) => setLogs(r.data)).catch(() => null), []);
   useEffect(() => { refresh(); loadLogs(); }, [refresh, loadLogs]);
   const rows = useMemo(() => products.filter((p) => (!cat || p.category_id === cat) && (!q || p.name.toLowerCase().includes(q.toLowerCase()))), [products, q, cat]);
+  const totalOf = (p) => Object.values(p.stock || {}).reduce((a, b) => a + Number(b || 0), 0);
+  const st = useSort(rows, {
+    name: (p) => p.name, category: (p) => p.category_name, total: totalOf, unit: (p) => p.unit,
+    ...Object.fromEntries(warehouses.map((w) => [`wh_${w.code}`, (p) => Number(p.stock?.[w.code] || 0)])),
+  }, { id: "stock" });
+  const lg = useSort(logs, {
+    no: (l) => l.no, date: (l) => l.date, product: (l) => l.product_name, from: (l) => whName(warehouses, l.from_wh),
+    to: (l) => whName(warehouses, l.to_wh), qty: (l) => Number(l.qty || 0), by: (l) => l.by,
+  }, { id: "transfer" });
   return (
     <div>
       <PageHeader title="Stok Multi-Gudang" subtitle="Mojopahit & Wahidin">
@@ -59,9 +69,9 @@ export default function Stock() {
       </div>
       <div className="panel overflow-x-auto" data-testid="stock-table">
         <table className="dtable">
-          <thead><tr><th>Barang</th><th>Kategori</th>{warehouses.map((w) => <th key={w.code} className="text-right">{w.code} · {w.name}</th>)}<th className="text-right">Total</th><th>Satuan</th><th /></tr></thead>
+          <thead><tr>{st.th("name", "Barang")}{st.th("category", "Kategori")}{warehouses.map((w) => st.th(`wh_${w.code}`, `${w.code} · ${w.name}`, "text-right"))}{st.th("total", "Total", "text-right")}{st.th("unit", "Satuan")}<th /></tr></thead>
           <tbody>
-            {rows.map((p, i) => {
+            {st.sorted.map((p, i) => {
               const total = Object.values(p.stock || {}).reduce((a, b) => a + Number(b || 0), 0);
               const low = total <= Number(p.min_stock || 0);
               return (
@@ -82,8 +92,8 @@ export default function Stock() {
       <div className="panel mt-4 overflow-x-auto" data-testid="transfer-log">
         <div className="p-3 font-heading text-lg uppercase">Riwayat Mutasi</div>
         <table className="dtable">
-          <thead><tr><th>No</th><th>Tanggal</th><th>Barang</th><th>Dari</th><th>Ke</th><th className="text-right">Qty</th><th>Oleh</th></tr></thead>
-          <tbody>{logs.map((l) => <tr key={l.id}><td className="font-mono">{l.no}</td><td>{fdate(l.date)}</td><td>{l.product_name}</td><td>{whName(warehouses, l.from_wh)}</td><td>{whName(warehouses, l.to_wh)}</td><td className="num">{num(l.qty)} {l.unit}</td><td>{l.by}</td></tr>)}</tbody>
+          <thead><tr>{lg.th("no", "No")}{lg.th("date", "Tanggal")}{lg.th("product", "Barang")}{lg.th("from", "Dari")}{lg.th("to", "Ke")}{lg.th("qty", "Qty", "text-right")}{lg.th("by", "Oleh")}</tr></thead>
+          <tbody>{lg.sorted.map((l) => <tr key={l.id}><td className="font-mono">{l.no}</td><td>{fdate(l.date)}</td><td>{l.product_name}</td><td>{whName(warehouses, l.from_wh)}</td><td>{whName(warehouses, l.to_wh)}</td><td className="num">{num(l.qty)} {l.unit}</td><td>{l.by}</td></tr>)}</tbody>
         </table>
         {!logs.length && <Empty text="Belum ada mutasi" />}
       </div>

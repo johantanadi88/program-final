@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field, Sel, Empty } from "@/components/common";
+import { useSort } from "@/components/SortTh";
 
 function Cell({ f, r }) {
   if (f.render) return f.render(r);
@@ -59,6 +60,8 @@ export default function EntityManager({ endpoint, fields, testid, title = "Data"
   const shown = rows
     .filter((r) => !q || JSON.stringify(r).toLowerCase().includes(q.toLowerCase()))
     .filter((r) => !filter || !fv || r[filter.key] === fv);
+  const { sorted, th } = useSort(shown, Object.fromEntries(fields.map((f) => [f.key,
+    f.sortValue || ((r) => (f.money || f.type === "number" ? Number(r[f.key] || 0) : r[f.key]))])), { id: testid });
 
   return (
     <div className="panel" data-testid={testid}>
@@ -74,9 +77,9 @@ export default function EntityManager({ endpoint, fields, testid, title = "Data"
       </div>
       <div className="overflow-x-auto">
         <table className="dtable">
-          <thead><tr>{fields.filter((f) => f.table !== false).map((f) => <th key={f.key}>{f.label}</th>)}{canWrite && <th className="text-right">Aksi</th>}</tr></thead>
+          <thead><tr>{fields.filter((f) => f.table !== false).map((f) => th(f.key, f.label, f.money || f.type === "number" ? "text-right" : ""))}{canWrite && <th className="text-right">Aksi</th>}</tr></thead>
           <tbody>
-            {shown.map((r, i) => (
+            {sorted.map((r, i) => (
               <tr key={r.id || i} data-testid={`${testid}-row-${i}`}>
                 {fields.filter((f) => f.table !== false).map((f) => <td key={f.key}><Cell f={f} r={r} /></td>)}
                 {canWrite && (

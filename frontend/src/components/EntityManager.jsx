@@ -22,7 +22,7 @@ function FormField({ f, value, onChange, isNew }) {
   const tid = `form-${f.key}`;
   if (f.type === "select") return <Sel testid={tid} value={value} onChange={onChange} options={f.options} placeholder={f.placeholder} />;
   if (f.type === "switch") return <Switch data-testid={tid} checked={!!value} onCheckedChange={onChange} />;
-  if (f.type === "textarea") return <Textarea data-testid={tid} value={value || ""} onChange={(e) => onChange(e.target.value)} />;
+  if (f.type === "textarea") return <Textarea data-testid={tid} rows={4} placeholder={f.placeholder} value={value || ""} onChange={(e) => onChange(e.target.value)} />;
   return (
     <Input data-testid={tid} type={f.type || "text"} value={value ?? ""} disabled={f.createOnly && !isNew}
       placeholder={f.placeholder} onChange={(e) => onChange(f.type === "number" ? e.target.value : e.target.value)} />

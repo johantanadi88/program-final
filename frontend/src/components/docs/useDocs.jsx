@@ -13,7 +13,7 @@ const LABEL = { thermal58: "Thermal 58mm", thermal80: "Thermal 80mm", a4: "Print
 export function useDocs() {
   const { setDoc, choose } = usePrint();
   const { isAdmin } = useAuth();
-  const { settings, warehouses } = useData();
+  const { settings, warehouses, suppliers } = useData();
   const sendWA = (sale) => window.open(waLink(sale, settings), "_blank");
   const printNota = (sale) => choose({ title: `Cetak Nota ${sale.invoice_no}`, onPick: (v) => openNota(sale, v) });
   const openNota = (sale, variant) =>
@@ -36,7 +36,7 @@ export function useDocs() {
   const printPO = (po, paper = "a4") =>
     setDoc({
       type: `po_${paper}`, title: `Cetak PO ${po.po_no} · ${paper.toUpperCase()}`,
-      node: <PODoc po={po} settings={settings} warehouses={warehouses} showPrice={isAdmin} paper={paper} />,
+      node: <PODoc po={po} supplier={(suppliers || []).find((s) => s.id === po.supplier_id)} settings={settings} warehouses={warehouses} showPrice={isAdmin} paper={paper} />,
       extra: (
         <Button variant="secondary" data-testid="po-doc-paper-toggle" onClick={() => printPO(po, paper === "a4" ? "a5" : "a4")}>
           Ganti ke {paper === "a4" ? "A5" : "A4"}

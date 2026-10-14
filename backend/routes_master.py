@@ -103,6 +103,7 @@ async def put_wh(code: str, body: dict, _=Depends(require_admin)):
 # ---------- Generic CRUD: categories, suppliers, customers ----------
 CRUD = {"categories": (require_admin, require_admin), "suppliers": (require_admin, require_admin),
         "customers": (get_user, get_user)}
+SUPPLIER_PUBLIC = ("id", "name", "prefix", "sales_contact", "sales_contact2", "note")
 
 
 def make_crud(name, read_dep, write_dep):
@@ -110,7 +111,7 @@ def make_crud(name, read_dep, write_dep):
     async def _list(user=Depends(get_user)):
         docs = await db[name].find({}, NO_ID).sort("name", 1).to_list(5000)
         if name == "suppliers" and not is_admin(user):
-            docs = [{k: d.get(k) for k in ("id", "name", "prefix")} for d in docs]
+            docs = [{k: d.get(k) for k in SUPPLIER_PUBLIC} for d in docs]
         return docs
 
     @router.post(f"/{name}", name=f"create_{name}")
@@ -246,4 +247,4 @@ async def bootstrap(user=Depends(get_user)):
 
 async def _list_suppliers(user):
     docs = await db.suppliers.find({}, NO_ID).sort("name", 1).to_list(500)
-    return docs if is_admin(user) else [{k: d.get(k) for k in ("id", "name", "prefix")} for d in docs]
+    return docs if is_admin(user) else [{k: d.get(k) for k in SUPPLIER_PUBLIC} for d in docs]

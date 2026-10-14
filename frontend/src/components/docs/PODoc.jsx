@@ -21,8 +21,9 @@ function Totals({ po, showPrice }) {
   );
 }
 
-export function PODoc({ po, settings = {}, warehouses = [], showPrice, paper = "a4" }) {
+export function PODoc({ po, supplier, settings = {}, warehouses = [], showPrice, paper = "a4" }) {
   const s = settings || {};
+  const sup = supplier || {};
   return (
     <div className={`doc doc-po doc-po-${paper}`} data-testid="po-doc">
       <div className="flex justify-between items-start border-b-2 border-black pb-2">
@@ -42,7 +43,13 @@ export function PODoc({ po, settings = {}, warehouses = [], showPrice, paper = "
         <div>Gudang Tujuan: <b>{whName(warehouses, po.warehouse)}</b></div>
         <div>Jenis PO: <b>{po.type === "indent" ? "PO Indent (Pesanan Konsumen)" : "Pembelian Manual / Restock"}</b></div>
         {po.type === "indent" && <div>Ref. Nota: <b>{po.invoice_no}</b> {po.delivery_date ? `· Rencana kirim ${fdate(po.delivery_date)}` : ""}</div>}
+        <div data-testid="po-doc-sales-contact">Kontak Sales: <b>{[sup.sales_contact, sup.sales_contact2].filter(Boolean).join(" / ") || "-"}</b></div>
       </div>
+      {sup.note && (
+        <div className="mb-2 border border-black p-1.5 whitespace-pre-line" data-testid="po-doc-supplier-note">
+          <b>Keterangan Supplier:</b> {sup.note}
+        </div>
+      )}
       <table className="doc-table doc-items po-doc-table">
         <thead>
           <tr>

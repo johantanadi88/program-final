@@ -29,7 +29,11 @@ export function SuppliersPage() {
       <EntityManager title="Supplier" endpoint="/suppliers" testid="suppliers-manager" onChanged={refresh}
         fields={[
           { key: "name", label: "Nama Pabrik" }, { key: "prefix", label: "Kode Prefix PO/DO", placeholder: "CMC", render: (r) => <span className="font-mono text-orange-300">{r.prefix}</span> },
-          { key: "sales_contact", label: "Kontak Sales" }, { key: "phone", label: "Telp" }, { key: "address", label: "Alamat" },
+          { key: "sales_contact", label: "Kontak Sales 1 (HP/WA Utama)" },
+          { key: "sales_contact2", label: "Kontak Sales 2 (Cadangan / Admin Pabrik)" },
+          { key: "phone", label: "Telp" }, { key: "address", label: "Alamat" },
+          { key: "note", label: "Note / Keterangan Tambahan", type: "textarea", placeholder: "No. rekening, MOQ, jadwal kirim pabrik...",
+            render: (r) => <span className="block max-w-[260px] whitespace-pre-line text-xs text-muted-foreground" data-testid={`supplier-note-${r.id}`}>{r.note || "-"}</span> },
         ]} />
       <p className="mt-3 font-mono text-xs text-muted-foreground">Format nomor PO otomatis: [PREFIX] + [2 digit tahun] + [4 digit urut] — contoh CMC260001</p>
     </div>

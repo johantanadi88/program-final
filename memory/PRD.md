@@ -34,3 +34,4 @@ All-in-One Management & POS System untuk Toko Bahan Bangunan Spesialis Seng, Roo
 
 ## 2026-10-14
 - Repo di-clone ulang dari GitHub ke /app, backend .env dibuat ulang (JWT_SECRET, ADMIN/KASIR creds), app berjalan normal
+- Supplier: field Kontak Sales 2 (sales_contact2) & Note/Keterangan (note, textarea); tampil di tabel Master Supplier & Cetak PO A4/A5 (kasir juga menerima field kontak & note)

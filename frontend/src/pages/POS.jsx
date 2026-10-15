@@ -80,34 +80,39 @@ export default function POS() {
   };
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_440px]" data-testid="pos-page">
-      <div className="panel p-3 sm:p-4 min-w-0">
-        {!online && <div className="mb-3 flex items-center gap-2 rounded-md bg-red-500/10 p-2 text-sm text-red-300" data-testid="pos-offline-banner"><WifiOff className="h-4 w-4" /> Mode Offline — data stok dari cache lokal ({boot.products.length} produk)</div>}
-        <ItemAdder onAdd={(l) => { setLines((s) => [...s, l]); toast.success(`${l.name} masuk keranjang`); }} />
-      </div>
-      <div className="flex flex-col gap-3 lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
-        <div className="panel p-4"><div className="mb-2 font-heading text-lg uppercase">Data Konsumen & Jadwal</div>
-          <CustomerForm customer={customer} setCustomer={setCustomer} save={saveCust} setSave={setSaveCust} />
-          <Field label="Rencana Tanggal Pengantaran" className="mt-3"><Input type="date" data-testid="pos-delivery-date" value={f.delivery_date} onChange={(e) => set("delivery_date", e.target.value)} /></Field>
-        </div>
-        <div className="panel p-4"><div className="font-heading text-lg uppercase">Keranjang ({lines.length})</div>
-          <CartLines lines={lines} onChange={setLines} />
-        </div>
-        <div className="panel p-4 grid gap-3">
-          <Field label="Catatan / Instruksi Khusus"><Textarea data-testid="pos-notes" placeholder='Contoh: "Titip ke tukang Budi", "Kirim sebelum jam 12"' value={f.notes} onChange={(e) => set("notes", e.target.value)} /></Field>
-          <Field label="Biaya Pengantaran / Ongkir (Rp)"><Input type="number" data-testid="pos-ongkir" value={f.ongkir} onChange={(e) => set("ongkir", e.target.value)} className="font-mono" /></Field>
-          <div className="grid grid-cols-4 gap-2">
-            {PAY_METHODS.map((m) => <button key={m} data-testid={`pos-pay-${m.toLowerCase()}`} onClick={() => set("method", m)} className={`pill px-1 text-xs sm:text-sm ${f.method === m ? "pill-on" : ""}`}>{m === "DP" ? "DP" : m}</button>)}
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,42fr)_minmax(0,58fr)]" data-testid="pos-page">
+      <div className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-20 lg:self-start lg:h-[calc(100vh-6rem)]" data-testid="pos-checkout-column">
+        <div className="flex min-h-0 flex-1 flex-col gap-3 lg:overflow-y-auto lg:pr-1" data-testid="pos-checkout-scroll">
+          <div className="panel p-4"><div className="mb-2 font-heading text-lg uppercase">Data Konsumen & Jadwal</div>
+            <CustomerForm customer={customer} setCustomer={setCustomer} save={saveCust} setSave={setSaveCust} />
+            <Field label="Rencana Tanggal Pengantaran" className="mt-3"><Input type="date" data-testid="pos-delivery-date" value={f.delivery_date} onChange={(e) => set("delivery_date", e.target.value)} /></Field>
           </div>
-          {f.method === "DP" && <Field label="Nominal DP / Uang Muka"><Input type="number" data-testid="pos-dp-amount" value={f.dp} onChange={(e) => set("dp", e.target.value)} className="font-mono" /></Field>}
-          {["Piutang", "DP"].includes(f.method) && <Field label="Jatuh Tempo"><Input type="date" data-testid="pos-due-date" value={f.due_date} onChange={(e) => set("due_date", e.target.value)} /></Field>}
-          {f.method === "Tunai" && (
-            <Field label="Uang Diterima (opsional)"><Input type="number" data-testid="pos-cash-received" value={f.cash} onChange={(e) => set("cash", e.target.value)} className="font-mono" /></Field>
-          )}
-          {f.method === "Tunai" && Number(f.cash) > 0 && <div className="font-mono text-sm text-emerald-400" data-testid="pos-change">Kembalian: {rp(Number(f.cash) - t.grand_total)}</div>}
+          <div className="panel p-4"><div className="font-heading text-lg uppercase">Keranjang ({lines.length})</div>
+            <CartLines lines={lines} onChange={setLines} />
+          </div>
+          <div className="panel p-4 grid gap-3">
+            <Field label="Catatan / Instruksi Khusus"><Textarea data-testid="pos-notes" placeholder='Contoh: "Titip ke tukang Budi", "Kirim sebelum jam 12"' value={f.notes} onChange={(e) => set("notes", e.target.value)} /></Field>
+            <Field label="Biaya Pengantaran / Ongkir (Rp)"><Input type="number" data-testid="pos-ongkir" value={f.ongkir} onChange={(e) => set("ongkir", e.target.value)} className="font-mono" /></Field>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">Metode Pembayaran</div>
+            <div className="grid grid-cols-4 gap-2">
+              {PAY_METHODS.map((m) => <button key={m} data-testid={`pos-pay-${m.toLowerCase()}`} onClick={() => set("method", m)} className={`pill px-1 text-xs sm:text-sm ${f.method === m ? "pill-on" : ""}`}>{m === "DP" ? "DP" : m}</button>)}
+            </div>
+            {f.method === "DP" && <Field label="Nominal DP / Uang Muka"><Input type="number" data-testid="pos-dp-amount" value={f.dp} onChange={(e) => set("dp", e.target.value)} className="font-mono" /></Field>}
+            {["Piutang", "DP"].includes(f.method) && <Field label="Jatuh Tempo"><Input type="date" data-testid="pos-due-date" value={f.due_date} onChange={(e) => set("due_date", e.target.value)} /></Field>}
+            {f.method === "Tunai" && (
+              <Field label="Uang Diterima (opsional)"><Input type="number" data-testid="pos-cash-received" value={f.cash} onChange={(e) => set("cash", e.target.value)} className="font-mono" /></Field>
+            )}
+            {f.method === "Tunai" && Number(f.cash) > 0 && <div className="font-mono text-sm text-emerald-400" data-testid="pos-change">Kembalian: {rp(Number(f.cash) - t.grand_total)}</div>}
+          </div>
+        </div>
+        <div className="panel sticky bottom-0 z-10 grid shrink-0 gap-3 border-t-2 border-primary/60 p-4 shadow-[0_-8px_24px_rgba(0,0,0,0.35)] lg:static" data-testid="pos-checkout-footer">
           <Totals t={t} paid={paid} />
           <Button data-testid="pos-submit-button" disabled={busy} onClick={submit} className="h-14 text-lg font-heading uppercase tracking-wider">{busy ? "Menyimpan..." : "Simpan Transaksi"}</Button>
         </div>
+      </div>
+      <div className="panel min-w-0 p-3 sm:p-4" data-testid="pos-picker-column">
+        {!online && <div className="mb-3 flex items-center gap-2 rounded-md bg-red-500/10 p-2 text-sm text-red-300" data-testid="pos-offline-banner"><WifiOff className="h-4 w-4" /> Mode Offline — data stok dari cache lokal ({boot.products.length} produk)</div>}
+        <ItemAdder onAdd={(l) => { setLines((s) => [...s, l]); toast.success(`${l.name} masuk keranjang`); }} />
       </div>
       <Dialog open={!!done} onOpenChange={(o) => !o && setDone(null)}>
         <DialogContent className="max-w-md" data-testid="pos-success-dialog">

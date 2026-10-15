@@ -41,3 +41,4 @@ All-in-One Management & POS System untuk Toko Bahan Bangunan Spesialis Seng, Roo
 - POS layout swap: kiri 42% (konsumen, keranjang, catatan, ongkir, metode bayar — scroll mandiri; footer Total + Simpan selalu terlihat), kanan 58% (Ready Stock & Indent Builder). <lg menumpuk, footer sticky bawah
 - Keranjang POS: baris inline grid (Produk | Qty×Panjang | Harga | Subtotal kanan | X), items-center, py-1.5, header kolom, toggle lengkung inline ringkas di bawah baris
 - POS resizable splitter (components/pos/useSplit.jsx): drag/keyboard panah/dblclick reset 50:50, batas 30–70%, disimpan di localStorage key hb_pos_split_left_pct, default 50:50, aktif >=lg
+- Mode Layar Penuh Kasir (AppShell usePosFocus): tombol di header hanya di /pos; sembunyikan sidebar & bottom nav, header ringkas, padding rapat, requestFullscreen browser; disimpan localStorage hb_pos_fullscreen; keluar via tombol/Esc

@@ -17,6 +17,7 @@ import { CartLines } from "@/components/pos/CartLines";
 import { CustomerForm } from "@/components/pos/CustomerForm";
 import { DeliveryDialog } from "@/components/sales/SaleDialogs";
 import { useDocs } from "@/components/docs/useDocs";
+import { useSplit } from "@/components/pos/useSplit";
 
 const EMPTY_CUST = { name: "", phone: "", address: "", type: "Umum", status: "" };
 
@@ -38,6 +39,7 @@ export default function POS() {
   const { user } = useAuth();
   const { online, refresh, setData, countQueue, ...boot } = useData();
   const { printNota, sendWA } = useDocs();
+  const split = useSplit();
   const [customer, setCustomer] = useState(EMPTY_CUST);
   const [saveCust, setSaveCust] = useState(false);
   const [lines, setLines] = useState([]);
@@ -80,7 +82,7 @@ export default function POS() {
   };
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,42fr)_minmax(0,58fr)]" data-testid="pos-page">
+    <div ref={split.ref} style={{ "--pos-left": `${split.pct}%` }} className="grid gap-4 lg:gap-2 lg:grid-cols-[minmax(0,var(--pos-left))_16px_minmax(0,1fr)]" data-testid="pos-page">
       <div className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-20 lg:self-start lg:h-[calc(100vh-6rem)]" data-testid="pos-checkout-column">
         <div className="flex min-h-0 flex-1 flex-col gap-3 lg:overflow-y-auto lg:pr-1" data-testid="pos-checkout-scroll">
           <div className="panel p-4"><div className="mb-2 font-heading text-lg uppercase">Data Konsumen & Jadwal</div>
@@ -110,6 +112,7 @@ export default function POS() {
           <Button data-testid="pos-submit-button" disabled={busy} onClick={submit} className="h-14 text-lg font-heading uppercase tracking-wider">{busy ? "Menyimpan..." : "Simpan Transaksi"}</Button>
         </div>
       </div>
+      {split.splitter}
       <div className="panel min-w-0 p-3 sm:p-4" data-testid="pos-picker-column">
         {!online && <div className="mb-3 flex items-center gap-2 rounded-md bg-red-500/10 p-2 text-sm text-red-300" data-testid="pos-offline-banner"><WifiOff className="h-4 w-4" /> Mode Offline — data stok dari cache lokal ({boot.products.length} produk)</div>}
         <ItemAdder onAdd={(l) => { setLines((s) => [...s, l]); toast.success(`${l.name} masuk keranjang`); }} />

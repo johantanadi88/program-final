@@ -191,36 +191,52 @@ function ReadyPicker({ onAdd }) {
 }
 
 const INDENT_RESET = { category: "", product_id: "", brand: "", thickness: "", color: "", price: "", bend_fee: "", bend: "lengkung" };
+const INDENT_CATS = /seng|spandek|deck|kanal|reng|alderon|plafon|talang/i;
+const STD_BATANG_M = 6;
+
+function useIndentOptions(supId, category, productId) {
+  const { products, categories } = useData();
+  const supProducts = useMemo(() => products.filter((p) => p.supplier_id === supId), [products, supId]);
+  const cats = useMemo(() => {
+    const own = supProducts.map((p) => p.category_name);
+    const std = categories.map((c) => c.name).filter((n) => INDENT_CATS.test(n));
+    return [...new Set([...own, ...std].filter(Boolean))];
+  }, [supProducts, categories]);
+  const models = supProducts.filter((p) => !category || p.category_name === category);
+  const tpl = products.find((x) => x.id === productId);
+  const catName = tpl?.category_name || category || "Seng Deck (Spandek)";
+  const catMeta = categories.find((c) => c.name === catName);
+  const isLen = tpl ? !!tpl.is_length : catMeta ? !!catMeta.is_length : true;
+  const unit = tpl?.unit || catMeta?.unit || (isLen ? "Lembar" : "Batang");
+  return { products, cats, models, tpl, catName, isLen, unit };
+}
 
 function IndentBuilder({ onAdd }) {
-  const { suppliers, products } = useData();
+  const { suppliers } = useData();
   const [f, setF] = useState({ supplier_id: suppliers[0]?.id || "", ...INDENT_RESET, length: "", qty: "" });
   const set = (k, v) => setF((s) => ({ ...s, [k]: v }));
   const supId = f.supplier_id || suppliers[0]?.id;
-  const supProducts = useMemo(() => products.filter((p) => p.is_length && p.supplier_id === supId), [products, supId]);
-  const cats = [...new Set(supProducts.map((p) => p.category_name).filter(Boolean))];
-  const models = supProducts.filter((p) => !f.category || p.category_name === f.category);
-  const noMaterial = !supProducts.length;
+  const { products, cats, models, tpl, catName, isLen, unit } = useIndentOptions(supId, f.category, f.product_id);
+  const noMaterial = !models.length;
   const pickSupplier = (v) => setF((s) => ({ ...s, supplier_id: v, ...INDENT_RESET }));
   const pickCategory = (v) => setF((s) => ({ ...s, ...INDENT_RESET, category: v }));
   const pickTpl = (id) => {
     const p = products.find((x) => x.id === id);
     if (!p) return setF((s) => ({ ...s, ...INDENT_RESET, category: s.category }));
     const pb = productBend(p);
-    const canBend = isBendable(p.category_name, true);
+    const canBend = isBendable(p.category_name, p.is_length);
     return setF((s) => ({ ...s, product_id: id, category: p.category_name || s.category, brand: p.brand || "", thickness: p.thickness || "",
       color: p.color || "", price: p.price ?? "", bend_fee: pb.upah_lengkung, bend: canBend && pb.is_lengkung ? "lengkung" : "lurus" }));
   };
-  const tpl = products.find((x) => x.id === f.product_id);
-  const bendable = !tpl || isBendable(tpl.category_name, true);
+  const bendable = isLen && isBendable(catName, true);
   const bend = bendable ? f.bend : "lurus";
+  const length = isLen ? f.length : Number(tpl?.length) || STD_BATANG_M;
   const sup = suppliers.find((s) => s.id === supId);
-  const catName = tpl?.category_name || f.category || "Seng Deck (Spandek)";
   const name = `${catName} ${f.brand || sup?.prefix || ""} ${f.thickness} ${f.color}`.replace(/\s+/g, " ").trim();
-  const line = calcLine({ mode: "indent", ...f, bend, bendable, bend_fee: bend === "lengkung" ? f.bend_fee : 0, supplier_id: sup?.id, name,
-    category_name: catName, is_length: true, unit: tpl?.unit || "Lembar", ratio: 1 });
+  const line = calcLine({ mode: "indent", ...f, length, bend, bendable, bend_fee: bend === "lengkung" ? f.bend_fee : 0, supplier_id: sup?.id, name,
+    category_name: catName, is_length: isLen, unit, ratio: 1 });
   const add = () => {
-    if (!sup || !Number(f.length) || !Number(f.qty) || !Number(f.price)) return toast.error("Lengkapi supplier, panjang, qty & harga");
+    if (!sup || (isLen && !Number(f.length)) || !Number(f.qty) || !Number(f.price)) return toast.error(`Lengkapi supplier, ${isLen ? "panjang, " : ""}qty & harga`);
     onAdd({ ...line, _key: uid() });
     toast.success("Item indent ditambahkan");
     setF((s) => ({ ...s, length: "", qty: "" }));
@@ -233,10 +249,10 @@ function IndentBuilder({ onAdd }) {
       </div>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Nama Pabrik / Supplier"><Sel testid="indent-supplier-select" value={supId} onChange={pickSupplier} options={suppliers.map((s) => ({ value: s.id, label: `${s.name} (${s.prefix})` }))} /></Field>
-        <Field label="Jenis Material / Kategori"><Sel testid="indent-category-select" value={f.category} onChange={pickCategory} placeholder={noMaterial ? "-" : "Semua jenis..."} options={cats} className={noMaterial ? "opacity-50 pointer-events-none" : ""} /></Field>
+        <Field label="Jenis Material / Kategori"><Sel testid="indent-category-select" value={f.category} onChange={pickCategory} placeholder="Semua jenis..." options={cats} /></Field>
         {noMaterial ? (
           <div className="col-span-2 rounded-md border border-dashed border-yellow-500/50 bg-yellow-500/10 px-3 py-2 text-sm text-yellow-300" data-testid="indent-no-material">
-            Tidak ada material kustom untuk pabrik ini
+            Tidak ada material kustom untuk pabrik ini — isi merk secara manual
           </div>
         ) : (
           <Field label="Merk / Tipe" className="col-span-2"><Sel testid="indent-template-select" value={f.product_id} onChange={pickTpl} placeholder="Pilih merk/tipe..." options={models.map((p) => ({ value: p.id, label: `${p.brand ? p.brand + " · " : ""}${p.name}` }))} /></Field>
@@ -244,9 +260,13 @@ function IndentBuilder({ onAdd }) {
         {noMaterial && <Field label="Merk (manual)"><Input data-testid="indent-brand-input" value={f.brand} onChange={(e) => set("brand", e.target.value)} /></Field>}
         <Field label="Tebal"><Input data-testid="indent-thickness-input" value={f.thickness} onChange={(e) => set("thickness", e.target.value)} placeholder="0.30" /></Field>
         <Field label="Warna"><Input data-testid="indent-color-input" value={f.color} onChange={(e) => set("color", e.target.value)} placeholder="Biru" /></Field>
-        <Field label="Panjang Kustom (m)"><Input data-testid="indent-length-input" type="number" step="0.01" value={f.length} onChange={(e) => set("length", e.target.value)} className="font-mono" /></Field>
-        <Field label="Qty (Lembar)"><Input data-testid="indent-qty-input" type="number" value={f.qty} onChange={(e) => set("qty", e.target.value)} className="font-mono" /></Field>
-        <Field label="Harga Jual / Meter"><Input data-testid="indent-price-input" type="number" value={f.price} onChange={(e) => set("price", e.target.value)} className="font-mono" /></Field>
+        {isLen ? (
+          <Field label="Panjang Kustom (m)"><Input data-testid="indent-length-input" type="number" step="0.01" value={f.length} onChange={(e) => set("length", e.target.value)} className="font-mono" /></Field>
+        ) : (
+          <Field label="Panjang Standar"><div className="flex h-10 items-center font-mono text-sm text-muted-foreground" data-testid="indent-std-length">{num(length)} m / {unit} (standar pabrik)</div></Field>
+        )}
+        <Field label={`Qty (${unit})`}><Input data-testid="indent-qty-input" type="number" value={f.qty} onChange={(e) => set("qty", e.target.value)} className="font-mono" /></Field>
+        <Field label={isLen ? "Harga Jual / Meter" : `Harga Jual / ${unit}`}><Input data-testid="indent-price-input" type="number" value={f.price} onChange={(e) => set("price", e.target.value)} className="font-mono" /></Field>
       </div>
       {bendable && (
         <div className="grid gap-3 sm:grid-cols-2 sm:items-end">
@@ -256,11 +276,11 @@ function IndentBuilder({ onAdd }) {
           )}
         </div>
       )}
-      <div className="rounded-md bg-secondary/50 p-3 font-mono text-sm space-y-1">
+      <div className="rounded-md bg-secondary/50 p-3 font-mono text-sm space-y-1" data-testid="indent-summary">
         <div className="text-foreground">{name}</div>
-        <div>Total Meter: {num(f.qty)} Lbr × {num(f.length)} m = {num(line.total_meter)} m</div>
+        {isLen ? <div>Total Meter: {num(f.qty)} {short(unit)} × {num(f.length)} m = {num(line.total_meter)} m</div> : <div>Qty: {num(f.qty)} {unit} × {rp(f.price)}</div>}
         <div>Subtotal Material: {rp(line.subtotal)}</div>
-        {line.bend_subtotal > 0 && <div className="text-orange-300">Upah Lengkung: {num(f.qty)} Lbr x {rp(f.bend_fee)} = {rp(line.bend_subtotal)}</div>}
+        {line.bend_subtotal > 0 && <div className="text-orange-300">Upah Lengkung: {num(f.qty)} {short(unit)} x {rp(f.bend_fee)} = {rp(line.bend_subtotal)}</div>}
       </div>
       <Button data-testid="indent-add-to-cart" onClick={add} className="h-12 text-base gap-2"><Plus className="h-5 w-5" /> Tambah Item Indent</Button>
     </div>

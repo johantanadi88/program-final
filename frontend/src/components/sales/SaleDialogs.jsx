@@ -1,3 +1,4 @@
+import { Printer } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { api, errMsg } from "@/lib/api";
@@ -42,20 +43,27 @@ export function DeliveryDialog({ sale, onClose, onDone }) {
           <Field label="Sopir"><Input data-testid="delivery-driver-input" value={meta.driver || ""} onChange={(e) => setMeta({ ...meta, driver: e.target.value })} /></Field>
           <Field label="Kendaraan / No Polisi"><Input data-testid="delivery-vehicle-input" value={meta.vehicle || ""} onChange={(e) => setMeta({ ...meta, vehicle: e.target.value })} /></Field>
         </div>
+        <div className="flex items-center justify-between">
+          <span className="font-mono text-xs uppercase text-muted-foreground">Checklist Item · rit ini</span>
+          <div className="flex gap-2">
+            <Button size="sm" variant="secondary" className="h-7 text-xs" data-testid="delivery-select-all" onClick={() => setRows(rows.map((r) => ({ ...r, on: r.left > 0, qty: r.left })))}>Kirim Semua</Button>
+            <Button size="sm" variant="ghost" className="h-7 text-xs" data-testid="delivery-clear-all" onClick={() => setRows(rows.map((r) => ({ ...r, on: false })))}>Kosongkan</Button>
+          </div>
+        </div>
         <div className="panel divide-y divide-border">
           {rows.map((r, i) => (
             <div key={r.line_id} className="flex items-center gap-3 p-3" data-testid={`delivery-item-${i}`}>
               <Checkbox data-testid={`delivery-item-check-${i}`} checked={r.on} disabled={r.left <= 0} onCheckedChange={(c) => upd(i, { on: !!c })} />
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium">{r.it.name}</div>
-                <div className="font-mono text-xs text-muted-foreground">Sisa {num(r.left)} {r.it.unit}{r.it.is_length ? ` · ${num(r.it.length)} m` : ""}</div>
+                <div className="font-mono text-xs text-muted-foreground">Dipesan {num(r.it.qty)} · Terkirim {num(r.it.delivered_qty || 0)} · Sisa {num(r.left)} {r.it.unit}{r.it.is_length ? ` · ${num(r.it.length)} m` : ""}</div>
               </div>
               <Input data-testid={`delivery-item-qty-${i}`} type="number" className="w-24 font-mono" disabled={!r.on} value={r.qty} max={r.left} onChange={(e) => upd(i, { qty: e.target.value })} />
               <span className="w-14 text-xs text-muted-foreground">{r.it.unit}</span>
             </div>
           ))}
         </div>
-        <Button data-testid="delivery-submit-button" onClick={submit} className="h-11">Simpan & Cetak Surat Jalan</Button>
+        <Button data-testid="delivery-submit-button" onClick={submit} className="h-11 gap-2"><Printer className="h-4 w-4" /> Cetak Surat Jalan</Button>
       </DialogContent>
     </Dialog>
   );

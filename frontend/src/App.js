@@ -10,6 +10,7 @@ import Dashboard from "@/pages/Dashboard";
 import POS from "@/pages/POS";
 import Sales from "@/pages/Sales";
 import Purchases from "@/pages/Purchases";
+import Delivery from "@/pages/Delivery";
 import Stock from "@/pages/Stock";
 import Products from "@/pages/Products";
 import { CustomersPage, SuppliersPage } from "@/pages/Masters";
@@ -32,6 +33,7 @@ function AppRoutes() {
         <Route index element={<Dashboard />} />
         <Route path="pos" element={<POS />} />
         <Route path="sales" element={<Sales />} />
+        <Route path="delivery" element={<Delivery />} />
         <Route path="purchases" element={<Purchases />} />
         <Route path="stock" element={<Stock />} />
         <Route path="customers" element={<CustomersPage />} />

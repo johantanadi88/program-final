@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, ShoppingCart, ReceiptText, PackagePlus, Warehouse, Users, Boxes, Factory, LineChart,
-  Settings, LogOut, Wifi, WifiOff, RefreshCw, Menu, X, Maximize2, Minimize2,
+  Settings, LogOut, Wifi, WifiOff, RefreshCw, Menu, X, Maximize2, Minimize2, Truck,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
@@ -11,6 +11,7 @@ const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, id: "dashboard" },
   { to: "/pos", label: "Kasir / POS", icon: ShoppingCart, id: "pos" },
   { to: "/sales", label: "Riwayat Penjualan", icon: ReceiptText, id: "sales" },
+  { to: "/delivery", label: "Pengiriman / Delivery", icon: Truck, id: "delivery" },
   { to: "/purchases", label: "Pembelian / PO", icon: PackagePlus, id: "purchases" },
   { to: "/stock", label: "Stok & Mutasi", icon: Warehouse, id: "stock" },
   { to: "/customers", label: "Pelanggan", icon: Users, id: "customers" },

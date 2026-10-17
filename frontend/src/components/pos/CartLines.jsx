@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { calcLine } from "@/lib/calc";
 import { rp, num, isBendable, productBend } from "@/lib/format";
@@ -35,7 +36,7 @@ function CartLine({ l, i, upd, del }) {
     bend_fee: v === "lurus" ? 0 : Number(l.bend_fee) || productBend(products.find((p) => p.id === l.product_id)).upah_lengkung,
   });
   return (
-    <div className={`${GRID} border-b border-border py-1.5`} data-testid={`cart-line-${i}`}>
+    <div className={`${GRID} scroll-my-24 border-b border-border px-1 py-1.5`} data-testid={`cart-line-${i}`}>
       <div className="col-span-4 min-w-0 sm:col-span-1">
         <div className="text-[13px] font-semibold leading-tight [overflow-wrap:anywhere] line-clamp-2" title={l.name}>{l.name}</div>
         <div className="mt-0.5 flex flex-wrap items-center gap-1 font-mono text-[10px] text-muted-foreground">
@@ -70,9 +71,42 @@ const CartHead = () => (
   </div>
 );
 
+function useFocusNewLine(count) {
+  const box = useRef(null);
+  const prev = useRef(count);
+  const [flash, setFlash] = useState(-1);
+  useEffect(() => {
+    const added = count > prev.current;
+    prev.current = count;
+    if (!added || !box.current) return undefined;
+    const row = box.current.querySelector(`[data-testid="cart-line-${count - 1}"]`);
+    if (!row) return undefined;
+    row.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+    if (window.matchMedia("(pointer: fine)").matches) {
+      const qty = row.querySelector("input");
+      qty?.focus({ preventScroll: true });
+      qty?.select?.();
+    }
+    setFlash(count - 1);
+    const t = setTimeout(() => setFlash(-1), 1400);
+    return () => clearTimeout(t);
+  }, [count]);
+  return { box, flash };
+}
+
 export function CartLines({ lines, onChange }) {
+  const { box, flash } = useFocusNewLine(lines.length);
   const upd = (i, patch) => onChange(lines.map((l, j) => (j === i ? calcLine({ ...l, ...patch }) : l)));
   const del = (i) => onChange(lines.filter((_, j) => j !== i));
   if (!lines.length) return <Empty text="Keranjang kosong — pilih barang ready stock atau buat item indent" />;
-  return <div className="mt-2" data-testid="cart-lines"><CartHead />{lines.map((l, i) => <CartLine key={l.line_id || l._key || i} l={l} i={i} upd={upd} del={del} />)}</div>;
+  return (
+    <div ref={box} className="mt-2 scroll-my-24" data-testid="cart-lines">
+      <CartHead />
+      {lines.map((l, i) => (
+        <div key={l.line_id || l._key || i} className={`rounded-sm transition-colors duration-700 ${flash === i ? "bg-primary/20 ring-1 ring-primary/60" : ""}`}>
+          <CartLine l={l} i={i} upd={upd} del={del} />
+        </div>
+      ))}
+    </div>
+  );
 }

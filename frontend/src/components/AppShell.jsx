@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
+import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 
 const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, id: "dashboard" },
@@ -114,14 +115,14 @@ export default function AppShell() {
   const { isPos, focus, toggle } = usePosFocus();
   return (
     <div className="flex min-h-screen" data-testid={focus ? "pos-fullscreen-mode" : undefined}>
-      {!focus && <aside className="hidden lg:flex w-64 shrink-0 flex-col gap-6 border-r border-border bg-[#080B12]/95 p-4 sticky top-0 h-screen">
+      {!focus && <aside className="hidden lg:flex w-64 shrink-0 flex-col gap-6 border-r border-border bg-[hsl(var(--sidebar))] p-4 sticky top-0 h-screen">
         <Brand />
         <nav className="flex flex-col gap-1 overflow-y-auto"><NavItems /></nav>
         <div className="mt-auto font-mono text-[10px] text-muted-foreground">v1.0 · PWA Offline-Ready</div>
       </aside>}
       {open && (
         <div className="fixed inset-0 z-50 lg:hidden bg-black/70" onClick={() => setOpen(false)}>
-          <aside className="h-full w-72 bg-[#080B12] p-4 flex flex-col gap-6" onClick={(e) => e.stopPropagation()}>
+          <aside className="h-full w-72 bg-[hsl(var(--sidebar))] p-4 flex flex-col gap-6" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between"><Brand /><button onClick={() => setOpen(false)} data-testid="close-mobile-menu"><X className="h-5 w-5" /></button></div>
             <nav className="flex flex-col gap-1"><NavItems onClick={() => setOpen(false)} /></nav>
           </aside>
@@ -139,7 +140,7 @@ export default function AppShell() {
               <div className="hidden lg:block font-mono text-[11px] uppercase tracking-widest text-muted-foreground">Spesialis Seng · Roofing · Material Konstruksi</div>
             </>
           )}
-          <div className="flex items-center gap-2 sm:gap-3">{isPos && <FocusButton focus={focus} toggle={toggle} />}<StatusBar /></div>
+          <div className="flex items-center gap-2 sm:gap-3"><ThemeSwitcher />{isPos && <FocusButton focus={focus} toggle={toggle} />}<StatusBar /></div>
         </header>
         <main className={focus ? "flex-1 p-2 sm:p-3" : "flex-1 p-3 sm:p-6 pb-24 lg:pb-8"}><Outlet /></main>
         {!focus && <nav className="fixed bottom-0 inset-x-0 z-40 grid grid-cols-4 border-t border-border bg-background/95 backdrop-blur lg:hidden">

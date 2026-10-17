@@ -45,7 +45,7 @@ export default function Dashboard() {
                 <CartesianGrid stroke="#1e293b" vertical={false} />
                 <XAxis dataKey="date" tickFormatter={(v) => v.slice(5)} stroke="#64748b" fontSize={11} />
                 <YAxis stroke="#64748b" fontSize={11} tickFormatter={(v) => `${num(v / 1e6, 1)}jt`} />
-                <Tooltip formatter={(v) => rp(v)} contentStyle={{ background: "#111827", border: "1px solid #334155" }} />
+                <Tooltip formatter={(v) => rp(v)} contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", color: "hsl(var(--popover-foreground))" }} />
                 <Area dataKey="omzet" stroke="#EA580C" strokeWidth={2} fill="url(#g)" />
               </AreaChart>
             </ResponsiveContainer>

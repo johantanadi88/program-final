@@ -11,7 +11,7 @@ import { useSort } from "@/components/SortTh";
 
 const byKeys = (keys) => Object.fromEntries(keys.map((k) => [k, (x) => x?.[k]]));
 
-const TT = { contentStyle: { background: "#111827", border: "1px solid #334155" }, formatter: (v) => rp(v) };
+const TT = { contentStyle: { background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", color: "hsl(var(--popover-foreground))" }, formatter: (v) => rp(v) };
 const useFetch = (path, params) => {
   const [d, setD] = useState(null);
   const key = JSON.stringify(params || {});

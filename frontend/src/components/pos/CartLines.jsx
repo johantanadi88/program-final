@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ModeTag, Empty } from "@/components/common";
 import { Switch } from "@/components/ui/switch";
 
-const GRID = "grid items-center gap-x-2 gap-y-1 grid-cols-[auto_84px_minmax(0,1fr)_28px] sm:grid-cols-[minmax(0,1fr)_auto_84px_92px_28px]";
+const GRID = "grid items-center gap-x-2 gap-y-1 grid-cols-[auto_5.25rem_minmax(0,1fr)_1.75rem] sm:grid-cols-[minmax(0,1fr)_auto_5.25rem_5.75rem_1.75rem]";
 const NUM = "h-8 px-2 font-mono text-xs";
 
 function BendInline({ l, i, setBend, upd }) {

@@ -80,6 +80,15 @@
     }
 }
 
+/* Font size scale (Normal / Besar / Ekstra Besar) */
+html { --fs: 1; }
+html[data-font="lg"] { --fs: 1.125; font-size: 112.5%; }
+html[data-font="xl"] { --fs: 1.25; font-size: 125%; }
+html[data-font] .text-\[9px\] { font-size: calc(9px * var(--fs)); }
+html[data-font] .text-\[10px\] { font-size: calc(10px * var(--fs)); }
+html[data-font] .text-\[11px\] { font-size: calc(11px * var(--fs)); }
+html[data-font] .text-\[13px\] { font-size: calc(13px * var(--fs)); }
+
 /* Theme-aware overrides for hard-coded accent colours */
 html[data-theme="light"] :is(.text-orange-200, .text-orange-300, .text-orange-400) { color: #C2410C; }
 html[data-theme="light"] :is(.text-red-300, .text-red-400) { color: #B91C1C; }
@@ -177,6 +186,7 @@ html[data-theme="slate"] .tag-indent { color: #FCD34D; }
 #print-root { display: none; }
 
 @media print {
+    html, html[data-font] { font-size: 100% !important; --fs: 1 !important; }
     body { background: #fff !important; }
     body > *:not(#print-root) { display: none !important; }
     #print-root { display: block !important; }

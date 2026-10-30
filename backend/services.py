@@ -114,6 +114,16 @@ async def adjust_stock(product_id, wh, delta):
         await db.products.update_one({"id": product_id}, {"$inc": {f"stock.{wh}": round(delta, 3)}})
 
 
+async def log_stock(it: dict, wh, delta, kind: str, ref: str, note: str, by: str):
+    if not (it.get("product_id") and wh and delta):
+        return
+    prod = await db.products.find_one({"id": it["product_id"]}, {"_id": 0, "stock": 1})
+    await db.stock_history.insert_one({
+        "id": uid(), "date": today(), "created_at": now_iso(), "product_id": it["product_id"], "product_name": it.get("name"),
+        "warehouse": wh, "delta": round(delta, 3), "unit": it.get("unit"), "balance": (prod or {}).get("stock", {}).get(wh),
+        "kind": kind, "ref": ref, "note": note, "by": by})
+
+
 def stock_units(it):
     return f(it["qty"]) * (f(it.get("ratio")) or 1)
 

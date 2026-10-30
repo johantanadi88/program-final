@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PageHeader, Sel, Field, Empty } from "@/components/common";
 import { useSort } from "@/components/SortTh";
+import { StockHistory } from "@/components/StockHistory";
 
 function TransferDialog({ open, onClose, product, onDone }) {
   const { products, warehouses } = useData();
@@ -97,6 +98,7 @@ export default function Stock() {
         </table>
         {!logs.length && <Empty text="Belum ada mutasi" />}
       </div>
+      <StockHistory warehouses={warehouses} />
       <TransferDialog open={!!tr} product={tr?.product} onClose={() => setTr(null)} onDone={() => { refresh(); loadLogs(); }} />
     </div>
   );

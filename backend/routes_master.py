@@ -227,6 +227,12 @@ async def transfer(body: TransferIn, user=Depends(get_user)):
     return doc
 
 
+@router.get("/stock/history")
+async def stock_history(product_id: str = "", kind: str = "", _=Depends(get_user)):
+    query = {k: v for k, v in (("product_id", product_id), ("kind", kind)) if v}
+    return await db.stock_history.find(query, NO_ID).sort("created_at", -1).to_list(500)
+
+
 @router.get("/stock/transfers")
 async def list_transfers(_=Depends(get_user)):
     return await db.stock_transfers.find({}, NO_ID).sort("created_at", -1).to_list(300)

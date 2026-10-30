@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader, Sel, Stat, Empty } from "@/components/common";
 import EntityManager from "@/components/EntityManager";
+import { VoidTable } from "@/components/sales/VoidTable";
 import { useSort } from "@/components/SortTh";
 
 const byKeys = (keys) => Object.fromEntries(keys.map((k) => [k, (x) => x?.[k]]));
@@ -140,7 +141,24 @@ function Receivables() {
   );
 }
 
-const TABS = [["pnl", "Laba Rugi", PnL], ["top", "Produk Menguntungkan", TopProducts], ["stock", "Laporan Stok", StockReport], ["po", "Rekap PO", PORecap], ["ar", "Piutang Jatuh Tempo", Receivables]];
+function VoidReport() {
+  const [r, setR] = useState({ from: todayStr(-30), to: todayStr() });
+  const [items, setItems] = useState([]);
+  useEffect(() => {
+    api.get("/sales", { params: { only_void: true, date_field: "void", date_from: r.from, date_to: r.to } }).then((x) => setItems(x.data.items)).catch(() => setItems([]));
+  }, [r]);
+  return (
+    <div className="grid gap-3" data-testid="report-void">
+      <div className="flex flex-wrap items-center gap-2 text-sm"><span className="text-muted-foreground">Tanggal Void</span>
+        <Input type="date" className="w-40" data-testid="report-void-from" value={r.from} onChange={(e) => setR({ ...r, from: e.target.value })} />–
+        <Input type="date" className="w-40" data-testid="report-void-to" value={r.to} onChange={(e) => setR({ ...r, to: e.target.value })} />
+      </div>
+      <VoidTable items={items} id="report-void" />
+    </div>
+  );
+}
+
+const TABS = [["pnl", "Laba Rugi", PnL], ["top", "Produk Menguntungkan", TopProducts], ["stock", "Laporan Stok", StockReport], ["po", "Rekap PO", PORecap], ["ar", "Piutang Jatuh Tempo", Receivables], ["void", "Void / Dibatalkan", VoidReport]];
 
 export default function Reports() {
   return (

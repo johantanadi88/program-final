@@ -13,10 +13,11 @@ import { DeliveryDialog, PaymentDialog } from "@/components/sales/SaleDialogs";
 import { useDocs } from "@/components/docs/useDocs";
 import { useSort } from "@/components/SortTh";
 import { PdfMenu } from "@/components/docs/PdfMenu";
+import { VoidTable } from "@/components/sales/VoidTable";
 
 const INIT = { q: "", customer_id: "", status: "", payment_status: "", date_field: "date", date_from: "", date_to: "" };
 
-function Filters({ fl, setFl, customers }) {
+function Filters({ fl, setFl, customers, isVoid }) {
   const set = (k, v) => setFl({ ...fl, [k]: v });
   return (
     <div className="panel p-3 mb-3 grid gap-2 grid-cols-2 md:grid-cols-4 xl:grid-cols-8" data-testid="sales-filters">
@@ -27,7 +28,7 @@ function Filters({ fl, setFl, customers }) {
       <Sel testid="sales-customer-filter" value={fl.customer_id} onChange={(v) => set("customer_id", v)} placeholder="Semua Konsumen" options={customers.map((c) => ({ value: c.id, label: c.name }))} />
       <Sel testid="sales-status-filter" value={fl.status} onChange={(v) => set("status", v)} placeholder="Semua Status" options={Object.entries(STATUS).map(([k, v]) => ({ value: k, label: v.label }))} />
       <Sel testid="sales-payment-filter" value={fl.payment_status} onChange={(v) => set("payment_status", v)} placeholder="Semua Bayar" options={["Lunas", "DP", "Piutang"]} />
-      <Sel testid="sales-date-field" value={fl.date_field} onChange={(v) => set("date_field", v)} options={[{ value: "date", label: "Tgl Transaksi" }, { value: "delivery", label: "Tgl Pengantaran" }]} />
+      <Sel testid="sales-date-field" value={fl.date_field} onChange={(v) => set("date_field", v)} options={isVoid ? [{ value: "void", label: "Tgl Void" }, { value: "date", label: "Tgl Transaksi" }] : [{ value: "date", label: "Tgl Transaksi" }, { value: "delivery", label: "Tgl Pengantaran" }]} />
       <Input type="date" data-testid="sales-date-from" value={fl.date_from} onChange={(e) => set("date_from", e.target.value)} />
       <Input type="date" data-testid="sales-date-to" value={fl.date_to} onChange={(e) => set("date_to", e.target.value)} />
     </div>
@@ -37,7 +38,10 @@ function Filters({ fl, setFl, customers }) {
 export default function Sales() {
   const { customers, refresh } = useData();
   const { printNota } = useDocs();
+  const [view, setView] = useState("active");
   const [fl, setFl] = useState(INIT);
+  const isVoid = view === "void";
+  const switchView = (v) => { setView(v); setFl({ ...INIT, date_field: v === "void" ? "void" : "date" }); };
   const [data, setData] = useState({ items: [], summary: {} });
   const [detail, setDetail] = useState(null);
   const [edit, setEdit] = useState(null);
@@ -49,7 +53,7 @@ export default function Sales() {
     total: (s) => Number(s.grand_total || 0), balance: (s) => Number(s.balance || 0), payment: (s) => s.payment_status,
   }, { id: "sales" });
 
-  const load = useCallback(() => api.get("/sales", { params: fl }).then((r) => setData(r.data)).catch((e) => toast.error(errMsg(e))), [fl]);
+  const load = useCallback(() => api.get("/sales", { params: { ...fl, only_void: isVoid } }).then((r) => setData(r.data)).catch((e) => toast.error(errMsg(e))), [fl, isVoid]);
   useEffect(() => { const t = setTimeout(load, 250); return () => clearTimeout(t); }, [load]);
   const changed = (s) => { load(); refresh(); if (s?.id) setDetail(s); };
   const openDetail = (s) => api.get(`/sales/${s.id}`).then((r) => setDetail(r.data));
@@ -57,10 +61,15 @@ export default function Sales() {
   return (
     <div>
       <PageHeader title="Riwayat Penjualan" subtitle="Tracking & Pengantaran">
-        <Button variant="secondary" data-testid="sales-filter-today-delivery" onClick={() => setFl({ ...INIT, date_field: "delivery", date_from: new Date().toLocaleDateString("en-CA"), date_to: new Date().toLocaleDateString("en-CA") })}>Jadwal Antar Hari Ini</Button>
-        <Button variant="ghost" data-testid="sales-filter-reset" onClick={() => setFl(INIT)}>Reset Filter</Button>
+        <Button variant="secondary" data-testid="sales-filter-today-delivery" onClick={() => setView("active") || setFl({ ...INIT, date_field: "delivery", date_from: new Date().toLocaleDateString("en-CA"), date_to: new Date().toLocaleDateString("en-CA") })}>Jadwal Antar Hari Ini</Button>
+        <Button variant="ghost" data-testid="sales-filter-reset" onClick={() => switchView(view)}>Reset Filter</Button>
       </PageHeader>
-      <Filters fl={fl} setFl={setFl} customers={customers} />
+      <div className="mb-3 flex gap-2" data-testid="sales-view-tabs">
+        <button data-testid="sales-tab-active" onClick={() => switchView("active")} className={`pill h-10 px-4 ${!isVoid ? "pill-on" : "bg-background"}`}>Transaksi Aktif</button>
+        <button data-testid="sales-tab-void" onClick={() => switchView("void")} className={`pill h-10 px-4 ${isVoid ? "border-red-500 bg-red-500/15 text-red-300" : "bg-background"}`}>Void / Dibatalkan</button>
+      </div>
+      <Filters fl={fl} setFl={setFl} customers={customers} isVoid={isVoid} />
+      {isVoid ? <VoidTable items={data.items} onOpen={openDetail} id="sales-void" /> : (
       <div className="panel overflow-x-auto" data-testid="sales-table">
         <table className="dtable">
           <thead><tr>{th("status", "Status")}{th("invoice", "No. Nota")}{th("date", "Tanggal")}{th("customer", "Pelanggan")}{th("delivery", "Tgl Pengantaran")}{th("sj", "Surat Jalan")}{th("total", "Total", "text-right")}{th("balance", "Sisa", "text-right")}{th("payment", "Bayar")}<th className="text-right">Aksi</th></tr></thead>
@@ -96,6 +105,7 @@ export default function Sales() {
         </table>
         {!data.items.length && <Empty text="Tidak ada transaksi sesuai filter" />}
       </div>
+      )}
       {detail && <SaleDetailDialog sale={detail} onClose={() => setDetail(null)} onChanged={changed} onDeliver={(s) => { setDetail(null); setDeliver(s); }} onPay={(s) => { setDetail(null); setPay(s); }} onEdit={(s) => { setDetail(null); setEdit(s); }} />}
       {edit && <SaleEditDialog sale={edit} onClose={() => setEdit(null)} onSaved={changed} />}
       <DeliveryDialog sale={deliver} onClose={() => setDeliver(null)} onDone={() => load()} />

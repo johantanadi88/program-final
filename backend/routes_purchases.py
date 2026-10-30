@@ -124,6 +124,8 @@ async def edit_po(pid: str, body: dict, user=Depends(require_admin)):
 @router.patch("/purchases/{pid}/receive")
 async def receive_po(pid: str, body: dict, user=Depends(get_user)):
     po = await get_po(pid)
+    if po.get("cancel_status") == "CANCELED":
+        raise HTTPException(400, "PO sudah dibatalkan (nota indent di-void) — tidak bisa menerima barang")
     status, wh = body.get("status"), body.get("warehouse") or po.get("warehouse", "G1")
     if status not in RECEIVE_STATUSES:
         raise HTTPException(400, "Status penerimaan tidak valid")

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from core import db, uid, now_iso, today, doc_number, get_user, require_admin, is_admin, strip_keys, NO_ID
 from services import (prep_line, adjust_stock, stock_units, sale_totals, compute_status, create_indent_pos,
-                      sync_indent_pos, f, STATUS_LABELS)
+                      sync_indent_pos, log_stock, f, STATUS_LABELS)
 
 router = APIRouter(prefix="/api")
 
@@ -72,20 +72,20 @@ async def post_sale(body: dict, user=Depends(get_user)):
 @router.get("/sales")
 async def list_sales(q: str = "", customer_id: str = "", status: str = "", payment_status: str = "",
                      date_field: str = "date", date_from: str = "", date_to: str = "", include_void: bool = False,
-                     user=Depends(get_user)):
-    query = {} if include_void else {"voided": {"$ne": True}}
+                     only_void: bool = False, user=Depends(get_user)):
+    query = {"voided": True} if only_void else {} if include_void else {"voided": {"$ne": True}}
     if customer_id:
         query["customer.id"] = customer_id
     if status:
         query["order_status"] = status
     if payment_status:
         query["payment_status"] = payment_status
-    field = "delivery_date" if date_field == "delivery" else "date"
+    field = {"delivery": "delivery_date", "void": "voided_at"}.get(date_field, "date")
     rng = {}
     if date_from:
         rng["$gte"] = date_from
     if date_to:
-        rng["$lte"] = date_to
+        rng["$lte"] = date_to + ("T23:59:59.999999" if field == "voided_at" else "")
     if rng:
         query[field] = rng
     if q:
@@ -134,17 +134,41 @@ async def edit_sale(sid: str, body: dict, user=Depends(require_admin)):
     return sale
 
 
+OPEN_PO = ["Draft", "Dalam Proses", "Barang Belum Lengkap"]
+
+
+async def cancel_indent_pos(sale: dict, reason: str, user: dict) -> list:
+    canceled = []
+    async for po in db.purchases.find({"sale_id": sale["id"], "voided": {"$ne": True}, "receive_status": {"$in": OPEN_PO}}, NO_ID):
+        nothing_received = po["receive_status"] in ("Draft", "Dalam Proses")
+        log = {"date": now_iso(), "status": "CANCELED", "by": user["name"], "note": f"Nota {sale['invoice_no']} di-void: {reason}"}
+        upd = {"cancel_status": "CANCELED", "receive_status": "Dibatalkan", "canceled_at": now_iso(), "canceled_by": user["name"],
+               "cancel_reason": f"VOID nota {sale['invoice_no']}: {reason}", "pending_incoming": 0}
+        if nothing_received:
+            upd["voided"] = True
+        await db.purchases.update_one({"id": po["id"]}, {"$set": upd, "$push": {"status_log": log}})
+        canceled.append({"po_id": po["id"], "po_no": po["po_no"], "supplier_name": po.get("supplier_name"),
+                         "prev_status": po["receive_status"], "partial_received": not nothing_received})
+    return canceled
+
+
 @router.post("/sales/{sid}/void")
 async def void_sale(sid: str, body: dict = None, user=Depends(require_admin)):
     sale = await get_sale(sid)
     if sale.get("voided"):
         return sale
+    reason = ((body or {}).get("reason") or "").strip()
+    if not reason:
+        raise HTTPException(400, "Alasan void wajib diisi")
     for it in sale["items"]:
         if it["mode"] == "ready":
             await adjust_stock(it.get("product_id"), it.get("warehouse"), stock_units(it))
-    await db.purchases.update_many({"sale_id": sid, "receive_status": {"$in": ["Draft", "Dalam Proses"]}},
-                                   {"$set": {"voided": True}})
-    upd = {"voided": True, "void_reason": (body or {}).get("reason", ""), "voided_by": user["name"], "voided_at": now_iso()}
+            await log_stock(it, it.get("warehouse"), stock_units(it), "VOID_RETURN", sale["invoice_no"],
+                            f"Retur stok karena void: {reason}", user["name"])
+    canceled = await cancel_indent_pos(sale, reason, user)
+    upd = {"voided": True, "void_reason": reason, "voided_by": user["name"], "voided_at": now_iso(),
+           "void_total": sale["grand_total"], "void_indent": any(i["mode"] == "indent" for i in sale["items"]),
+           "canceled_pos": canceled}
     await db.sales.update_one({"id": sid}, {"$set": upd})
     return {**sale, **upd}
 

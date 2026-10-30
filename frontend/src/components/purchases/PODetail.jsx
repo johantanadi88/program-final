@@ -115,7 +115,11 @@ export function PODetail({ po, onChanged, onEdit }) {
           </div>
         )}
       </div>
-      <ReceivePanel po={po} onChanged={onChanged} />
+      {po.cancel_status === "CANCELED" ? (
+        <div className="rounded-md border border-red-500/50 bg-red-500/10 p-3 text-sm" data-testid="po-canceled-info">
+          <b className="text-red-300">PO DIBATALKAN (CANCELED)</b> · {po.cancel_reason} · oleh {po.canceled_by}. Tidak ada barang yang menunggu penerimaan dari PO ini.
+        </div>
+      ) : <ReceivePanel po={po} onChanged={onChanged} />}
       {po.status_log?.length > 0 && (
         <div className="panel p-3 text-xs">
           <div className="font-heading text-base uppercase mb-1">Riwayat Status</div>

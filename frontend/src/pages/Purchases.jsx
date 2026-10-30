@@ -20,6 +20,7 @@ const BADGE = {
   "Barang Diterima": ["Diterima", "bg-emerald-500/15 text-emerald-300 border-emerald-500/40"],
   "Barang Belum Lengkap": ["Belum Lengkap", "bg-orange-500/15 text-orange-300 border-orange-500/40"],
   "Barang Direject Semua": ["Rejected", "bg-red-500/15 text-red-300 border-red-500/40"],
+  Dibatalkan: ["Canceled", "bg-red-500/15 text-red-300 border-red-500/40 line-through"],
 };
 
 export const StatusBadge = ({ status, testid }) => {

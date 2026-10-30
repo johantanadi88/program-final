@@ -10,6 +10,26 @@ import { Sel, StatusDot, ModeTag } from "@/components/common";
 import { useDocs } from "@/components/docs/useDocs";
 import { useSort } from "@/components/SortTh";
 import { PdfMenu } from "@/components/docs/PdfMenu";
+import { VoidIndentTag } from "@/components/sales/VoidTable";
+import { rp as fmtRp, fdt } from "@/lib/format";
+
+function VoidInfo({ sale }) {
+  return (
+    <div className="rounded-md border border-red-500/50 bg-red-500/10 p-3 text-sm" data-testid="sale-detail-void-info">
+      <div className="mb-1 font-heading text-lg uppercase text-red-300">Transaksi Dibatalkan (Void)</div>
+      <div><span className="text-muted-foreground">Alasan: </span><b data-testid="sale-detail-void-reason">{sale.void_reason || "-"}</b></div>
+      <div className="font-mono text-xs text-muted-foreground">Di-void oleh {sale.voided_by || "-"} · {fdt(sale.voided_at)} · Total dibatalkan {fmtRp(sale.void_total ?? sale.grand_total)}</div>
+      <div className="font-mono text-xs text-muted-foreground">Stok barang ready dikembalikan ke gudang asal & tercatat di Histori Stok.</div>
+      {sale.canceled_pos?.length > 0 && (
+        <div className="mt-2 grid gap-1" data-testid="sale-detail-canceled-pos">
+          {sale.canceled_pos.map((p) => (
+            <div key={p.po_id} className="font-mono text-xs">PO {p.po_no} · {p.supplier_name} → <b className="text-red-300">CANCELED</b>{p.partial_received ? " (sebagian barang sudah diterima, sisa antrean dihapus)" : ""}</div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const Info = ({ l, v, testid }) => (
   <div><div className="font-mono text-[10px] uppercase text-muted-foreground">{l}</div><div className="text-sm" data-testid={testid}>{v || "-"}</div></div>
@@ -30,8 +50,10 @@ export function SaleDetailDialog({ sale, onClose, onChanged, onDeliver, onPay, o
   };
   const setStatus = (st) => act(() => api.patch(`/sales/${sale.id}/status`, { order_status: st }), "Status pesanan diperbarui");
   const voidSale = () => {
-    const reason = window.prompt("Alasan void nota?");
+    const hasIndent = sale.items.some((i) => i.mode === "indent");
+    const reason = window.prompt(`Alasan void nota ${sale.invoice_no}? (wajib diisi)${hasIndent ? "\n\nPERHATIAN: PO pabrik indent yang belum diterima akan otomatis DIBATALKAN." : ""}`);
     if (reason === null) return;
+    if (!reason.trim()) { toast.error("Alasan void wajib diisi"); return; }
     act(() => api.post(`/sales/${sale.id}/void`, { reason }), "Nota di-void, stok dikembalikan").then(onClose);
   };
   return (
@@ -41,8 +63,10 @@ export function SaleDetailDialog({ sale, onClose, onChanged, onDeliver, onPay, o
           <DialogTitle className="font-heading text-2xl uppercase flex items-center gap-2">
             <StatusDot status={sale.order_status} testid="sale-detail-status-dot" /> {sale.invoice_no}
             {sale.voided && <span className="tag bg-red-500/20 text-red-300">VOID</span>}
+            {sale.voided && sale.void_indent && <VoidIndentTag testid="sale-detail-void-indent-tag" />}
           </DialogTitle>
         </DialogHeader>
+        {sale.voided && <VoidInfo sale={sale} />}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 panel p-3">
           <Info l="Tanggal" v={fdate(sale.date)} />
           <Info l="Pelanggan" v={`${sale.customer?.name} ${sale.customer?.phone ? "· " + sale.customer.phone : ""}`} />

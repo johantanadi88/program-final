@@ -2,6 +2,8 @@ export const rp = (v) => "Rp " + Math.round(Number(v) || 0).toLocaleString("id-I
 export const num = (v, d = 2) => (Number(v) || 0).toLocaleString("id-ID", { maximumFractionDigits: d });
 export const fdate = (s) =>
   s ? new Date(s.length === 10 ? s + "T00:00:00" : s).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) : "-";
+export const fdt = (s) =>
+  s ? new Date(s).toLocaleString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "-";
 export const todayStr = (off = 0) => new Date(Date.now() + off * 864e5).toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
 export const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now());
 

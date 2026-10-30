@@ -1,4 +1,4 @@
-import { num, fdate, bendLabel, whName } from "@/lib/format";
+import { num, fdate, bendLabel, whName, qtyUnit } from "@/lib/format";
 
 export function SuratJalan({ sale, delivery, settings = {}, warehouses = [] }) {
   const s = settings || {};
@@ -33,7 +33,7 @@ export function SuratJalan({ sale, delivery, settings = {}, warehouses = [] }) {
             <tr key={it.line_id || i}>
               <td>{i + 1}</td>
               <td>{it.name}</td>
-              <td>{num(it.qty)} {it.unit}</td>
+              <td>{num(it.qty)} {qtyUnit(it)}</td>
               <td>{it.is_length ? `${num(it.length)} m` : "-"}</td>
               <td>{it.is_length ? `${num(it.total_meter)} m` : "-"}</td>
               <td>{it.is_length ? bendLabel(it.bend) : "-"}</td>

@@ -9,6 +9,7 @@ const PAGE = {
   thermal58: "@page{size:58mm auto;margin:0}",
   thermal80: "@page{size:80mm auto;margin:0}",
   a4: "@page{size:A4 portrait;margin:12mm}",
+  a5: "@page{size:A5 portrait;margin:6mm}",
   f4: "@page{size:210mm 330mm;margin:12mm}",
   sj: "@page{size:A5 landscape;margin:7mm}",
   po_a4: "@page{size:A4 portrait;margin:10mm}",

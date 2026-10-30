@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Sel, StatusDot, ModeTag } from "@/components/common";
 import { useDocs } from "@/components/docs/useDocs";
 import { useSort } from "@/components/SortTh";
+import { PdfMenu } from "@/components/docs/PdfMenu";
 
 const Info = ({ l, v, testid }) => (
   <div><div className="font-mono text-[10px] uppercase text-muted-foreground">{l}</div><div className="text-sm" data-testid={testid}>{v || "-"}</div></div>
@@ -97,6 +98,7 @@ export function SaleDetailDialog({ sale, onClose, onChanged, onDeliver, onPay, o
           <div className="flex flex-wrap items-center gap-2">
             <Sel testid="sale-status-select" value={sale.order_status} onChange={setStatus} options={Object.entries(STATUS).map(([k, v]) => ({ value: k, label: v.label }))} />
             <Button variant="secondary" className="gap-2" data-testid="sale-print-nota" onClick={() => printNota(sale)}><Printer className="h-4 w-4" /> Nota</Button>
+            <PdfMenu sale={sale} testid="sale-pdf-menu" />
             <Button variant="secondary" className="gap-2" data-testid="sale-send-wa" onClick={() => sendWA(sale)}><MessageCircle className="h-4 w-4" /> WA</Button>
             <Button variant="secondary" className="gap-2" data-testid="sale-create-sj" onClick={() => onDeliver(sale)}><Truck className="h-4 w-4" /> Surat Jalan</Button>
             {sale.balance > 0 && <Button variant="secondary" className="gap-2" data-testid="sale-add-payment" onClick={() => onPay(sale)}><Wallet className="h-4 w-4" /> Pelunasan</Button>}

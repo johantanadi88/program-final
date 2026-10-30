@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { CheckCircle2, MessageCircle, Printer, Truck, WifiOff } from "lucide-react";
+import { CheckCircle2, MessageCircle, Printer, Truck, WifiOff, FileDown } from "lucide-react";
 import { api, errMsg } from "@/lib/api";
 import { summarize, initialPaid } from "@/lib/calc";
 import { rp, todayStr, uid, PAY_METHODS } from "@/lib/format";
@@ -38,7 +38,7 @@ function Totals({ t, paid }) {
 export default function POS() {
   const { user } = useAuth();
   const { online, refresh, setData, countQueue, ...boot } = useData();
-  const { printNota, sendWA } = useDocs();
+  const { printNota, sendWA, pdfNota, pdfStruk, pdfSJ } = useDocs();
   const split = useSplit();
   const [customer, setCustomer] = useState(EMPTY_CUST);
   const [saveCust, setSaveCust] = useState(false);
@@ -131,6 +131,14 @@ export default function POS() {
                 {!done.offline && <Button variant="secondary" className="gap-2 h-12" data-testid="pos-create-sj" onClick={() => { setSj(done); setDone(null); }}><Truck className="h-4 w-4" /> Surat Jalan</Button>}
                 <Button variant="outline" className="h-12" data-testid="pos-new-transaction" onClick={() => setDone(null)}>Transaksi Baru</Button>
               </div>
+              {!done.offline && (
+                <div className="grid gap-2 border-t border-border pt-3" data-testid="pos-pdf-options">
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground">Export / Cetak PDF</div>
+                  <Button variant="outline" className="h-10 justify-start gap-2" data-testid="pos-pdf-nota" onClick={() => pdfNota(done, "a4")}><FileDown className="h-4 w-4" /> PDF Nota / Invoice (A4 / A5)</Button>
+                  <Button variant="outline" className="h-10 justify-start gap-2" data-testid="pos-pdf-struk" onClick={() => pdfStruk(done)}><FileDown className="h-4 w-4" /> PDF Struk Thermal (80mm)</Button>
+                  <Button variant="outline" className="h-10 justify-start gap-2" data-testid="pos-pdf-sj" onClick={() => pdfSJ(done)}><FileDown className="h-4 w-4" /> PDF Surat Jalan / Pengiriman</Button>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>

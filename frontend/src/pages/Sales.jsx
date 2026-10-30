@@ -12,6 +12,7 @@ import { SaleEditDialog } from "@/components/sales/SaleEditDialog";
 import { DeliveryDialog, PaymentDialog } from "@/components/sales/SaleDialogs";
 import { useDocs } from "@/components/docs/useDocs";
 import { useSort } from "@/components/SortTh";
+import { PdfMenu } from "@/components/docs/PdfMenu";
 
 const INIT = { q: "", customer_id: "", status: "", payment_status: "", date_field: "date", date_from: "", date_to: "" };
 
@@ -77,6 +78,7 @@ export default function Sales() {
                 <td><span className={`tag ${s.payment_status === "Lunas" ? "bg-emerald-500/15 text-emerald-300" : "bg-orange-500/15 text-orange-300"}`}>{s.payment_status}</span></td>
                 <td className="text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                   <Button size="icon" variant="ghost" title="Cetak ulang nota" data-testid={`sales-print-${i}`} onClick={() => printNota(s)}><Printer className="h-4 w-4" /></Button>
+                  <PdfMenu sale={s} compact testid={`sales-pdf-${i}`} />
                   <Button size="icon" variant="ghost" title="Surat jalan" data-testid={`sales-sj-${i}`} onClick={() => setDeliver(s)}><Truck className="h-4 w-4" /></Button>
                   {s.balance > 0 && <Button size="icon" variant="ghost" title="Pelunasan" data-testid={`sales-pay-${i}`} onClick={() => setPay(s)}><Wallet className="h-4 w-4" /></Button>}
                 </td>

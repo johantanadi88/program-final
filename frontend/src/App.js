@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { DataProvider } from "@/context/DataContext";
 import { PrintProvider } from "@/components/PrintProvider";
+import { PdfProvider } from "@/components/PdfProvider";
 import AppShell from "@/components/AppShell";
 import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
@@ -52,12 +53,12 @@ export default function App() {
     <AuthProvider>
       <DataProvider>
         <TooltipProvider delayDuration={100}>
-          <PrintProvider>
+          <PrintProvider><PdfProvider>
             <BrowserRouter>
               <AppRoutes />
             </BrowserRouter>
             <Toaster theme="dark" richColors position="top-right" />
-          </PrintProvider>
+          </PdfProvider></PrintProvider>
         </TooltipProvider>
       </DataProvider>
     </AuthProvider>

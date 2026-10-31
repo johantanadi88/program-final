@@ -1,6 +1,8 @@
 export const rp = (v) => "Rp " + Math.round(Number(v) || 0).toLocaleString("id-ID");
 export const num = (v, d = 2) => (Number(v) || 0).toLocaleString("id-ID", { maximumFractionDigits: d });
+export const TBA = "TBA";
 export const fdate = (s) =>
+  s === TBA ? "TBA (Diinfokan Kembali)" :
   s ? new Date(s.length === 10 ? s + "T00:00:00" : s).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) : "-";
 export const fdt = (s) =>
   s ? new Date(s).toLocaleString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "-";
@@ -39,7 +41,7 @@ export const waNumber = (p) => {
 export function notaText(sale, st = {}) {
   const L = [`*${st.name || "HORAS BAJA"}*`, st.address || "", `Telp ${st.phone || ""} | WA ${st.wa1 || ""}`, "",
     `No. Nota: ${sale.invoice_no}`, `Tanggal: ${fdate(sale.date)}`, `Pelanggan: ${sale.customer?.name}`,
-    `Rencana Pengantaran: ${fdate(sale.delivery_date)}`, "------------------------"];
+    `Rencana Kirim: ${fdate(sale.delivery_date)}`, "------------------------"];
   sale.items.forEach((it, i) => {
     L.push(`${i + 1}. ${it.name}`, `   ${lineQty(it)} @${rp(it.price)}${it.is_length ? "/m" : ""} = ${rp(it.subtotal)}`);
     if (it.bend_subtotal > 0) L.push(`   Upah Lengkung: ${num(it.qty)} ${it.unit} x ${rp(it.bend_fee)} = ${rp(it.bend_subtotal)}`);

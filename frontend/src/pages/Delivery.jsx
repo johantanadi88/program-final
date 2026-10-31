@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ChevronDown, Search, Truck } from "lucide-react";
 import { api, errMsg } from "@/lib/api";
-import { num, fdate, todayStr, qtyUnit, STATUS } from "@/lib/format";
+import { num, fdate, todayStr, qtyUnit, STATUS, TBA } from "@/lib/format";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -22,7 +22,7 @@ const shipState = (s) => {
   return sent > 0 ? "partial" : "none";
 };
 const itemSummary = (items = []) => items.map((i) => `${num(i.qty)} ${qtyUnit(i)} ${i.name}`);
-const TABS = [["today", "Pengiriman Hari Ini"], ["tomorrow", "Pengiriman Besok"], ["range", "Rentang Tanggal"]];
+const TABS = [["today", "Pengiriman Hari Ini"], ["tomorrow", "Pengiriman Besok"], ["range", "Rentang Tanggal"], ["tba", "TBA (Belum Dijadwalkan)"]];
 
 function ShipBadge({ state, testid }) {
   const [label, cls] = SHIP[state];
@@ -93,7 +93,7 @@ export default function Delivery() {
   const [items, setItems] = useState([]);
   const [ship, setShip] = useState(null);
 
-  const dates = tab === "today" ? [todayStr(), todayStr()] : tab === "tomorrow" ? [todayStr(1), todayStr(1)] : [range.from, range.to];
+  const dates = tab === "today" ? [todayStr(), todayStr()] : tab === "tomorrow" ? [todayStr(1), todayStr(1)] : tab === "tba" ? [TBA, TBA] : [range.from, range.to];
   const load = useCallback(() => api.get("/sales", { params: { q, date_field: "delivery", date_from: dates[0], date_to: dates[1] } })
     .then((r) => setItems(r.data.items)).catch((e) => toast.error(errMsg(e))), [q, dates[0], dates[1]]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { const t = setTimeout(load, 250); return () => clearTimeout(t); }, [load]);

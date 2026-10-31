@@ -100,7 +100,7 @@ export function Nota({ sale, settings = {}, variant = "thermal80" }) {
       <div><b>Kepada:</b> {sale.customer?.name}</div>
       {sale.customer?.phone && <div>Telp: {sale.customer.phone}</div>}
       {(sale.delivery_address || sale.customer?.address) && <div>Alamat: {sale.delivery_address || sale.customer?.address}</div>}
-      <Row l="Rencana Tgl Pengantaran" r={fdate(sale.delivery_date)} />
+      <Row l="Rencana Kirim" r={fdate(sale.delivery_date)} />
       <div className="doc-hr" />
       {isPaper ? <ItemsTable items={sale.items} /> : <ItemsList items={sale.items} />}
       <div className="doc-hr" />

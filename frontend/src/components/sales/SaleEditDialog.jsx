@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import { api, errMsg } from "@/lib/api";
 import { summarize } from "@/lib/calc";
 import { rp } from "@/lib/format";
+import { DeliveryDateField } from "@/components/pos/DeliveryDateField";
 import { useData } from "@/context/DataContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,7 +40,7 @@ export function SaleEditDialog({ sale, onClose, onSaved }) {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <Field label="Nama Pelanggan"><Input data-testid="edit-customer-name" value={f.customer.name || ""} onChange={(e) => set("customer", { ...f.customer, name: e.target.value })} /></Field>
           <Field label="No HP"><Input data-testid="edit-customer-phone" value={f.customer.phone || ""} onChange={(e) => set("customer", { ...f.customer, phone: e.target.value })} /></Field>
-          <Field label="Tanggal Pengantaran"><Input type="date" data-testid="edit-delivery-date" value={f.delivery_date || ""} onChange={(e) => set("delivery_date", e.target.value)} /></Field>
+          <DeliveryDateField label="Tanggal Pengantaran" testid="edit-delivery-date" value={f.delivery_date} onChange={(v) => set("delivery_date", v)} />
           <Field label="Jatuh Tempo"><Input type="date" data-testid="edit-due-date" value={f.due_date || ""} onChange={(e) => set("due_date", e.target.value)} /></Field>
           <Field label="Alamat Kirim" className="col-span-2"><Input data-testid="edit-delivery-address" value={f.delivery_address || ""} onChange={(e) => set("delivery_address", e.target.value)} /></Field>
           <Field label="Ongkir (Rp)"><Input type="number" data-testid="edit-ongkir" value={f.ongkir} onChange={(e) => set("ongkir", e.target.value)} /></Field>

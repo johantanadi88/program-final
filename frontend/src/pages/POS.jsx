@@ -3,7 +3,8 @@ import { toast } from "sonner";
 import { CheckCircle2, MessageCircle, Printer, Truck, WifiOff, FileDown } from "lucide-react";
 import { api, errMsg } from "@/lib/api";
 import { summarize, initialPaid } from "@/lib/calc";
-import { rp, todayStr, uid, PAY_METHODS } from "@/lib/format";
+import { rp, todayStr, uid, PAY_METHODS, TBA } from "@/lib/format";
+import { DeliveryDateField } from "@/components/pos/DeliveryDateField";
 import { queueAdd, deductLocalStock } from "@/lib/offline";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
@@ -43,7 +44,7 @@ export default function POS() {
   const [customer, setCustomer] = useState(EMPTY_CUST);
   const [saveCust, setSaveCust] = useState(false);
   const [lines, setLines] = useState([]);
-  const [f, setF] = useState({ delivery_date: todayStr(1), ongkir: 0, notes: "", method: "Tunai", dp: "", due_date: todayStr(14), cash: "" });
+  const [f, setF] = useState({ delivery_date: TBA, ongkir: 0, notes: "", method: "Tunai", dp: "", due_date: todayStr(14), cash: "" });
   const [done, setDone] = useState(null);
   const [sj, setSj] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -87,7 +88,7 @@ export default function POS() {
         <div className="flex min-h-0 flex-1 flex-col gap-3 lg:overflow-y-auto lg:pr-1" data-testid="pos-checkout-scroll">
           <div className="panel p-4"><div className="mb-2 font-heading text-lg uppercase">Data Konsumen & Jadwal</div>
             <CustomerForm customer={customer} setCustomer={setCustomer} save={saveCust} setSave={setSaveCust} />
-            <Field label="Rencana Tanggal Pengantaran" className="mt-3"><Input type="date" data-testid="pos-delivery-date" value={f.delivery_date} onChange={(e) => set("delivery_date", e.target.value)} /></Field>
+            <DeliveryDateField className="mt-3" value={f.delivery_date} onChange={(v) => set("delivery_date", v)} />
           </div>
           <div className="panel p-4"><div className="font-heading text-lg uppercase">Keranjang ({lines.length})</div>
             <CartLines lines={lines} onChange={setLines} />

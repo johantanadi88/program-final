@@ -149,8 +149,14 @@ async def receive_po(pid: str, body: dict, user=Depends(get_user)):
         if it.get("sale_line_id"):
             sale_updates[it["sale_line_id"]] = rq >= qty > 0
     po["warehouse"], po["stock_wh"], po["receive_status"] = wh, wh, status
+    got = sum(f(it.get("received_qty")) for it in po["items"])
+    if got > 0:
+        po["received_date"] = body.get("received_date") or today()
+        po["received_by"] = user["name"]
+    else:
+        po["received_date"] = None
     po["status_log"].append({"date": now_iso(), "status": status, "warehouse": wh, "by": user["name"],
-                             "note": body.get("note", "")})
+                             "received_date": po.get("received_date"), "note": body.get("note", "")})
     await db.purchases.replace_one({"id": pid}, po)
     if po.get("sale_id") and sale_updates:
         sale = await db.sales.find_one({"id": po["sale_id"]}, NO_ID)

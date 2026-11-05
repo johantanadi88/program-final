@@ -28,6 +28,31 @@ export const StatusBadge = ({ status, testid }) => {
   return <span data-testid={testid} className={`inline-block whitespace-nowrap rounded border px-2 py-0.5 font-mono text-[11px] ${cls}`}>{label}</span>;
 };
 
+const RECV = {
+  full: ["Barang Lengkap", "bg-emerald-500/15 text-emerald-300 border-emerald-500/40"],
+  partial: ["Diterima Parsial", "bg-orange-500/15 text-orange-300 border-orange-500/40"],
+  none: ["Belum Diterima", "bg-slate-500/15 text-slate-300 border-slate-500/40"],
+};
+export const receiptState = (p) => {
+  const qty = (p.items || []).reduce((a, i) => a + Number(i.qty || 0), 0);
+  const got = (p.items || []).reduce((a, i) => a + Number(i.received_qty || 0), 0);
+  return got <= 0 ? "none" : got >= qty ? "full" : "partial";
+};
+export const receiptDate = (p) => p.received_date
+  || [...(p.status_log || [])].reverse().find((l) => ["Barang Diterima", "Barang Belum Lengkap"].includes(l.status))?.date?.slice(0, 10) || null;
+
+function ReceiptCell({ p, i }) {
+  const st = receiptState(p);
+  const [label, cls] = RECV[st];
+  const d = st !== "none" && receiptDate(p);
+  return (
+    <td className="w-px whitespace-nowrap">
+      <span data-testid={`po-row-receipt-${i}`} className={`inline-block rounded border px-2 py-0.5 font-mono text-[11px] ${cls}`}>{label}</span>
+      <div className="mt-0.5 font-mono text-[11px] text-muted-foreground" data-testid={`po-row-receipt-date-${i}`}>{d ? `Diterima: ${fdate(d)}` : "—"}</div>
+    </td>
+  );
+}
+
 const summary = (items = []) => {
   if (!items.length) return "-";
   const f = items[0];
@@ -44,11 +69,15 @@ function PORow({ p, i, isAdmin, warehouses, onOpen, onPrint, onEdit, onVoid }) {
       </td>
       <td className="w-px whitespace-nowrap">{p.supplier_name}</td>
       <td className="w-px whitespace-nowrap text-xs">{whName(warehouses, p.warehouse)}</td>
-      <td className="w-full min-w-[200px]">
-        <div className="line-clamp-1" title={(p.items || []).map((it) => `${num(it.qty)} ${qtyUnit(it)} ${it.name}`).join("\n")}>{summary(p.items)}</div>
-        {p.type === "indent" && <div className="text-[11px] text-muted-foreground">Indent · {p.customer_name}</div>}
+      <td className="min-w-[180px] max-w-[260px]">
+        <div className="line-clamp-2 text-xs leading-snug" title={(p.items || []).map((it) => `${num(it.qty)} ${qtyUnit(it)} ${it.name}`).join("\n")}>{summary(p.items)}</div>
+        <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground">
+          {p.type === "indent" && <span className="truncate">Indent · {p.customer_name}</span>}
+          {(p.items || []).length > 1 && <button type="button" className="shrink-0 text-orange-300 underline-offset-2 hover:underline" data-testid={`po-row-items-more-${i}`} onClick={(e) => { e.stopPropagation(); onOpen(p); }}>Lihat Detail</button>}
+        </div>
       </td>
       <td className="w-px whitespace-nowrap"><StatusBadge status={p.receive_status} testid={`po-row-status-${i}`} /></td>
+      <ReceiptCell p={p} i={i} />
       {isAdmin && <td className="num w-px" data-testid={`po-row-total-${i}`}>{rp(p.total)}</td>}
       <td className="w-px whitespace-nowrap text-right" onClick={(e) => e.stopPropagation()}>
         <Button size="sm" variant="ghost" className="h-7 gap-1 px-2" data-testid={`po-detail-btn-${i}`} onClick={() => onOpen(p)}><Eye className="h-3.5 w-3.5" /> Detail/Terima</Button>
@@ -56,6 +85,7 @@ function PORow({ p, i, isAdmin, warehouses, onOpen, onPrint, onEdit, onVoid }) {
         {isAdmin && <Button size="icon" variant="ghost" className="h-7 w-7" title="Edit PO" data-testid={`po-edit-${i}`} onClick={() => onEdit(p)}><Pencil className="h-3.5 w-3.5" /></Button>}
         {isAdmin && <Button size="icon" variant="ghost" className="h-7 w-7" title="Void / Hapus" data-testid={`po-void-${i}`} onClick={() => onVoid(p)}><Trash2 className="h-3.5 w-3.5 text-red-400" /></Button>}
       </td>
+      <td className="w-full p-0" aria-hidden />
     </tr>
   );
 }
@@ -71,7 +101,8 @@ export default function Purchases() {
   const set = (k, v) => setFl({ ...fl, [k]: v });
   const { sorted, th } = useSort(data.items, {
     date: (p) => `${p.date} ${p.po_no}`, supplier: (p) => p.supplier_name, warehouse: (p) => whName(warehouses, p.warehouse),
-    items: (p) => summary(p.items), status: (p) => p.receive_status, total: (p) => Number(p.total || 0),
+    items: (p) => summary(p.items), status: (p) => p.receive_status,
+    receipt: (p) => `${["none", "partial", "full"].indexOf(receiptState(p))} ${receiptDate(p) || ""}`, total: (p) => Number(p.total || 0),
   }, { id: "po" });
 
   const load = useCallback(() => api.get("/purchases", { params: fl }).then((r) => {
@@ -102,8 +133,9 @@ export default function Purchases() {
         <div className="max-h-[70vh] overflow-auto" data-testid="po-list">
           <table className="dtable dtable-compact">
             <thead><tr>
-              {th("date", "No. PO | Tanggal")}{th("supplier", "Supplier / Pabrik")}{th("warehouse", "Gudang Tujuan")}{th("items", "Ringkasan Item & Qty")}{th("status", "Status")}
-              {isAdmin && th("total", "Total PO", "text-right")}<th className="text-right">Aksi</th>
+              {th("date", "No. PO | Tanggal")}{th("supplier", "Supplier / Pabrik")}{th("warehouse", "Gudang Tujuan")}{th("items", "Ringkasan Item & Qty")}{th("status", "Status")}{th("receipt", "Penerimaan Barang")}
+              {isAdmin && th("total", "Total PO", "text-right")}<th className="text-right">Aksi</th><th className="w-full p-0" aria-hidden />
+
             </tr></thead>
             <tbody>
               {sorted.map((p, i) => (

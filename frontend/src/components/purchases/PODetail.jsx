@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Ban, Pencil, Printer } from "lucide-react";
 import { api, errMsg } from "@/lib/api";
-import { rp, num, fdate, bendLabel, whName, qtyUnit, RECEIVE_STATUSES } from "@/lib/format";
+import { rp, num, fdate, bendLabel, whName, qtyUnit, todayStr, RECEIVE_STATUSES } from "@/lib/format";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import { Button } from "@/components/ui/button";
@@ -16,14 +16,16 @@ function ReceivePanel({ po, onChanged }) {
   const [st, setSt] = useState("Dalam Proses");
   const [wh, setWh] = useState(po.warehouse || "G1");
   const [rq, setRq] = useState({});
+  const [rd, setRd] = useState(todayStr());
   useEffect(() => {
     setSt(RECEIVE_STATUSES.includes(po.receive_status) ? po.receive_status : "Dalam Proses");
     setWh(po.warehouse || "G1");
     setRq(Object.fromEntries(po.items.map((i) => [i.line_id, i.received_qty || 0])));
+    setRd(po.received_date || todayStr());
   }, [po]);
   const save = async () => {
     try {
-      const { data } = await api.patch(`/purchases/${po.id}/receive`, { status: st, warehouse: wh, items: Object.entries(rq).map(([line_id, v]) => ({ line_id, received_qty: Number(v) })) });
+      const { data } = await api.patch(`/purchases/${po.id}/receive`, { status: st, warehouse: wh, received_date: rd, items: Object.entries(rq).map(([line_id, v]) => ({ line_id, received_qty: Number(v) })) });
       toast.success(`Status penerimaan: ${st}`);
       refresh();
       onChanged(data);
@@ -32,7 +34,8 @@ function ReceivePanel({ po, onChanged }) {
   return (
     <div className="panel p-3 grid gap-3" data-testid="po-receive-panel">
       <div className="font-heading text-lg uppercase">Update Status Penerimaan Barang</div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+        <Field label="Tanggal Diterima di Gudang"><Input type="date" data-testid="receive-date-input" value={rd} onChange={(e) => setRd(e.target.value)} /></Field>
         <Field label="Gudang Tujuan"><Sel testid="receive-warehouse-select" value={wh} onChange={setWh} options={warehouses.map((w) => ({ value: w.code, label: `${w.code} - ${w.name}` }))} /></Field>
         <Field label="Status"><Sel testid="receive-status-select" value={st} onChange={setSt} options={RECEIVE_STATUSES} /></Field>
       </div>
@@ -43,7 +46,7 @@ function ReceivePanel({ po, onChanged }) {
           <span className="w-24 text-muted-foreground">/ {num(it.qty)} {it.unit}</span>
         </div>
       ))}
-      <Button data-testid="receive-submit-button" onClick={save}>Simpan Status</Button>
+      <Button data-testid="receive-submit-button" onClick={save}>Terima Barang / Simpan Status</Button>
     </div>
   );
 }

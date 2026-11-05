@@ -43,13 +43,13 @@ export function SuratJalan({ sale, delivery, settings = {}, warehouses = [] }) {
       </table>
       {sale.notes && <div className="mt-2"><b>Catatan / Instruksi Khusus:</b> {sale.notes}</div>}
       <div className="grid grid-cols-3 gap-4 mt-6 text-center">
-        <div>
+        <div className="flex flex-col">
           <div className="font-bold">Penerima</div>
           <div className="doc-received">Barang diterima dengan baik dan benar</div>
-          <div className="doc-sign">( ........................ )</div>
+          <div className="doc-sign mt-auto pt-8">( ........................ )</div>
         </div>
-        <div><div className="font-bold">Sopir</div><div className="doc-sign mt-8">( ........................ )</div></div>
-        <div><div className="font-bold">Hormat Kami / Gudang</div><div className="doc-sign mt-8">( ........................ )</div></div>
+        <div className="flex flex-col"><div className="font-bold">Sopir</div><div className="doc-sign mt-auto pt-8">( ........................ )</div></div>
+        <div className="flex flex-col"><div className="font-bold">Hormat Kami / Gudang</div><div className="doc-sign mt-auto pt-8">( ........................ )</div></div>
       </div>
     </div>
   );

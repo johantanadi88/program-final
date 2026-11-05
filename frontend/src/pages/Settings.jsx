@@ -10,8 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader, Field } from "@/components/common";
 import EntityManager from "@/components/EntityManager";
+import { BankAccounts } from "@/components/BankAccounts";
 
-const STORE_FIELDS = [["name", "Nama Toko"], ["tagline", "Tagline"], ["address", "Alamat Toko Utama"], ["phone", "Telp"], ["wa1", "HP/WA 1"], ["wa2", "HP/WA 2"], ["bank", "Info Rekening Bank"]];
+const STORE_FIELDS = [["name", "Nama Toko"], ["tagline", "Tagline"], ["address", "Alamat Toko Utama"], ["phone", "Telp"], ["wa1", "HP/WA 1"], ["wa2", "HP/WA 2"]];
 const CSV = ["products", "customers", "suppliers", "categories", "sales", "purchases", "stock_transfers", "expenses"];
 
 function StoreForm() {
@@ -82,11 +83,13 @@ export default function Settings() {
       <Tabs defaultValue="store">
         <TabsList className="flex flex-wrap h-auto">
           <TabsTrigger value="store" data-testid="settings-tab-store">Identitas Toko</TabsTrigger>
+          <TabsTrigger value="bank" data-testid="settings-tab-bank">Data Rekening Bank Toko</TabsTrigger>
           <TabsTrigger value="wh" data-testid="settings-tab-warehouses">Gudang</TabsTrigger>
           <TabsTrigger value="users" data-testid="settings-tab-users">Manajemen User</TabsTrigger>
           <TabsTrigger value="backup" data-testid="settings-tab-backup">Backup & Export</TabsTrigger>
         </TabsList>
         <TabsContent value="store" className="mt-4"><StoreForm /></TabsContent>
+        <TabsContent value="bank" className="mt-4"><BankAccounts /></TabsContent>
         <TabsContent value="wh" className="mt-4"><Warehouses /></TabsContent>
         <TabsContent value="users" className="mt-4">
           <EntityManager title="User" endpoint="/users" testid="users-manager" defaults={{ role: "kasir", active: true }}

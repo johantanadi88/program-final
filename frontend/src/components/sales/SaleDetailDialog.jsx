@@ -74,6 +74,7 @@ export function SaleDetailDialog({ sale, onClose, onChanged, onDeliver, onPay, o
           <Info l="Kasir" v={sale.cashier} />
           <Info l="Alamat Kirim" v={sale.delivery_address} />
           <Info l="Pembayaran" v={`${sale.payment_method} · ${sale.payment_status}`} />
+          {sale.transfer_bank && <Info l="Bank Tujuan Transfer" v={`${sale.transfer_bank.bank}: ${sale.transfer_bank.number} a/n ${sale.transfer_bank.holder}`} testid="sale-detail-transfer-bank" />}
           <Info l="Jatuh Tempo" v={fdate(sale.due_date)} />
           <Info l="Catatan / Instruksi" v={sale.notes} />
         </div>

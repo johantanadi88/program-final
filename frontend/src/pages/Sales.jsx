@@ -15,9 +15,11 @@ import { useSort } from "@/components/SortTh";
 import { PdfMenu } from "@/components/docs/PdfMenu";
 import { VoidTable } from "@/components/sales/VoidTable";
 
-const INIT = { q: "", customer_id: "", status: "", payment_status: "", date_field: "date", date_from: "", date_to: "" };
+const INIT = { q: "", customer_id: "", status: "", payment_status: "", bank_id: "", date_field: "date", date_from: "", date_to: "" };
 
 function Filters({ fl, setFl, customers, isVoid }) {
+  const { settings } = useData();
+  const banks = settings?.bank_accounts || [];
   const set = (k, v) => setFl({ ...fl, [k]: v });
   return (
     <div className="panel p-3 mb-3 grid gap-2 grid-cols-2 md:grid-cols-4 xl:grid-cols-8" data-testid="sales-filters">
@@ -28,6 +30,7 @@ function Filters({ fl, setFl, customers, isVoid }) {
       <Sel testid="sales-customer-filter" value={fl.customer_id} onChange={(v) => set("customer_id", v)} placeholder="Semua Konsumen" options={customers.map((c) => ({ value: c.id, label: c.name }))} />
       <Sel testid="sales-status-filter" value={fl.status} onChange={(v) => set("status", v)} placeholder="Semua Status" options={Object.entries(STATUS).map(([k, v]) => ({ value: k, label: v.label }))} />
       <Sel testid="sales-payment-filter" value={fl.payment_status} onChange={(v) => set("payment_status", v)} placeholder="Semua Bayar" options={["Lunas", "DP", "Piutang"]} />
+      {banks.length > 0 && <Sel testid="sales-bank-filter" value={fl.bank_id} onChange={(v) => set("bank_id", v)} placeholder="Semua Bank" options={banks.map((b) => ({ value: b.id, label: `${b.bank} · ${b.number}` }))} />}
       <Sel testid="sales-date-field" value={fl.date_field} onChange={(v) => set("date_field", v)} options={isVoid ? [{ value: "void", label: "Tgl Void" }, { value: "date", label: "Tgl Transaksi" }] : [{ value: "date", label: "Tgl Transaksi" }, { value: "delivery", label: "Tgl Pengantaran" }]} />
       <Input type="date" data-testid="sales-date-from" value={fl.date_from} onChange={(e) => set("date_from", e.target.value)} />
       <Input type="date" data-testid="sales-date-to" value={fl.date_to} onChange={(e) => set("date_to", e.target.value)} />
@@ -84,7 +87,7 @@ export default function Sales() {
                 <td className="text-xs">{s.deliveries?.length ? s.deliveries.map((d) => <div key={d.id}>Rit {d.rit}: {fdate(d.date)}</div>) : <span className="text-muted-foreground">-</span>}</td>
                 <td className="num">{rp(s.grand_total)}</td>
                 <td className={`num ${s.balance > 0 ? "text-orange-300" : "text-muted-foreground"}`}>{rp(s.balance)}</td>
-                <td><span className={`tag ${s.payment_status === "Lunas" ? "bg-emerald-500/15 text-emerald-300" : "bg-orange-500/15 text-orange-300"}`}>{s.payment_status}</span></td>
+                <td><span className={`tag ${s.payment_status === "Lunas" ? "bg-emerald-500/15 text-emerald-300" : "bg-orange-500/15 text-orange-300"}`}>{s.payment_status}</span>{s.transfer_bank && <div className="mt-0.5 whitespace-nowrap font-mono text-[10px] text-muted-foreground" data-testid={`sales-bank-${i}`}>{s.transfer_bank.bank} · {s.transfer_bank.number}</div>}</td>
                 <td className="text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                   <Button size="icon" variant="ghost" title="Cetak ulang nota" data-testid={`sales-print-${i}`} onClick={() => printNota(s)}><Printer className="h-4 w-4" /></Button>
                   <PdfMenu sale={s} compact testid={`sales-pdf-${i}`} />

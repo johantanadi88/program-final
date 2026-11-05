@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { api, errMsg } from "@/lib/api";
 import { num, rp, todayStr, PAY_METHODS } from "@/lib/format";
+import { BankSelect } from "@/components/BankSelect";
 import { useData } from "@/context/DataContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -88,6 +89,7 @@ export function PaymentDialog({ sale, onClose, onDone }) {
         <div className="grid grid-cols-2 gap-3">
           <Field label="Nominal (Rp)" className="col-span-2"><Input data-testid="payment-amount-input" type="number" value={f.amount ?? ""} onChange={(e) => setF({ ...f, amount: e.target.value })} className="h-12 text-lg font-mono" /></Field>
           <Field label="Metode"><Sel testid="payment-method-select" value={f.method} onChange={(v) => setF({ ...f, method: v })} options={PAY_METHODS.slice(0, 2)} /></Field>
+          {f.method === "Transfer" && <BankSelect testid="payment-transfer-bank" value={f.bank_id} onChange={(v) => setF({ ...f, bank_id: v })} />}
           <Field label="Tanggal"><Input type="date" data-testid="payment-date-input" value={f.date || ""} onChange={(e) => setF({ ...f, date: e.target.value })} /></Field>
           <Field label="Keterangan" className="col-span-2"><Input data-testid="payment-note-input" value={f.note || ""} onChange={(e) => setF({ ...f, note: e.target.value })} /></Field>
         </div>

@@ -1,4 +1,4 @@
-import { rp, num, fdate, lineQty, bendLabel, qtyUnit } from "@/lib/format";
+import { rp, num, fdate, lineQty, bendLabel, qtyUnit, transferLine } from "@/lib/format";
 
 const PAPER = ["a4", "a5", "f4"];
 const Row = ({ l, r, b }) => (
@@ -110,6 +110,12 @@ export function Nota({ sale, settings = {}, variant = "thermal80" }) {
           <div className="doc-hr" />
           <div><b>Catatan / Instruksi Khusus:</b></div>
           <div>{sale.notes}</div>
+        </>
+      )}
+      {sale.transfer_bank && (
+        <>
+          <div className="doc-hr" />
+          <div className="font-bold" data-testid="nota-transfer-bank">Transfer via {transferLine(sale.transfer_bank)}</div>
         </>
       )}
       <Signatures />

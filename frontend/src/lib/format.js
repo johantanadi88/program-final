@@ -38,6 +38,8 @@ export const waNumber = (p) => {
   return d;
 };
 
+export const transferLine = (b) => `${b.bank}: ${b.number} a/n ${b.holder}`;
+
 export function notaText(sale, st = {}) {
   const L = [`*${st.name || "HORAS BAJA"}*`, st.address || "", `Telp ${st.phone || ""} | WA ${st.wa1 || ""}`, "",
     `No. Nota: ${sale.invoice_no}`, `Tanggal: ${fdate(sale.date)}`, `Pelanggan: ${sale.customer?.name}`,
@@ -48,6 +50,7 @@ export function notaText(sale, st = {}) {
   });
   L.push("------------------------", `Ongkir: ${rp(sale.ongkir)}`, `*TOTAL: ${rp(sale.grand_total)}*`,
     `Dibayar: ${rp(sale.paid_total)}`, `Sisa: ${rp(sale.balance)}`);
+  if (sale.transfer_bank) L.push(`Transfer via ${transferLine(sale.transfer_bank)}`);
   if (sale.notes) L.push(`Catatan: ${sale.notes}`);
   L.push("", "Terima kasih - HORAS BAJA");
   return L.join("\n");

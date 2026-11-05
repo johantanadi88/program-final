@@ -5,6 +5,7 @@ import { api, errMsg } from "@/lib/api";
 import { summarize, initialPaid } from "@/lib/calc";
 import { rp, todayStr, uid, PAY_METHODS, TBA } from "@/lib/format";
 import { DeliveryDateField } from "@/components/pos/DeliveryDateField";
+import { BankSelect } from "@/components/BankSelect";
 import { queueAdd, deductLocalStock } from "@/lib/offline";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
@@ -57,8 +58,9 @@ export default function POS() {
   const submit = async () => {
     if (!lines.length) return toast.error("Keranjang masih kosong");
     if (f.method === "DP" && !(Number(f.dp) > 0)) return toast.error("Isi nominal DP");
+    if (f.method === "Transfer" && boot.settings?.bank_accounts?.length && !f.bank_id) return toast.error("Pilih bank tujuan transfer");
     const payload = { offline_id: uid(), customer, save_customer: saveCust, delivery_date: f.delivery_date, delivery_address: customer.address,
-      notes: f.notes, ongkir: Number(f.ongkir) || 0, payment_method: f.method, dp_amount: Number(f.dp) || 0,
+      notes: f.notes, ongkir: Number(f.ongkir) || 0, payment_method: f.method, dp_amount: Number(f.dp) || 0, transfer_bank_id: f.method === "Transfer" ? f.bank_id || null : null,
       due_date: ["Piutang", "DP"].includes(f.method) ? f.due_date : null, items: lines.map(({ _key, ...l }) => l) };
     setBusy(true);
     try {
@@ -102,6 +104,7 @@ export default function POS() {
             </div>
             {f.method === "DP" && <Field label="Nominal DP / Uang Muka"><Input type="number" data-testid="pos-dp-amount" value={f.dp} onChange={(e) => set("dp", e.target.value)} className="font-mono" /></Field>}
             {["Piutang", "DP"].includes(f.method) && <Field label="Jatuh Tempo"><Input type="date" data-testid="pos-due-date" value={f.due_date} onChange={(e) => set("due_date", e.target.value)} /></Field>}
+            {f.method === "Transfer" && <BankSelect value={f.bank_id} onChange={(v) => set("bank_id", v)} />}
             {f.method === "Tunai" && (
               <Field label="Uang Diterima (opsional)"><Input type="number" data-testid="pos-cash-received" value={f.cash} onChange={(e) => set("cash", e.target.value)} className="font-mono" /></Field>
             )}

@@ -31,6 +31,16 @@ async def upsert_customer(data: dict) -> dict:
     return cust
 
 
+async def resolve_bank(bank_id) -> Optional[dict]:
+    if not bank_id:
+        return None
+    st = await db.settings.find_one({"id": "store"}, {"_id": 0, "bank_accounts": 1}) or {}
+    acc = next((a for a in st.get("bank_accounts") or [] if a.get("id") == bank_id), None)
+    if not acc:
+        raise HTTPException(400, "Rekening bank tujuan tidak ditemukan di Pengaturan")
+    return {k: acc.get(k) for k in ("id", "bank", "number", "holder")}
+
+
 async def create_sale(data: dict, user: dict, date: Optional[str] = None) -> dict:
     if data.get("offline_id"):
         exist = await db.sales.find_one({"offline_id": data["offline_id"]}, NO_ID)
@@ -48,11 +58,12 @@ async def create_sale(data: dict, user: dict, date: Optional[str] = None) -> dic
             "offline_id": data.get("offline_id"), "created_at": now_iso()}
     sale_totals(sale)
     method = sale["payment_method"]
+    sale["transfer_bank"] = await resolve_bank(data.get("transfer_bank_id")) if method == "Transfer" else None
     paid = sale["grand_total"] if method in ("Tunai", "Transfer") else (f(data.get("dp_amount")) if method == "DP" else 0)
     paid = min(paid, sale["grand_total"])
     if paid > 0:
         sale["payments"].append({"id": uid(), "date": sale["date"], "amount": paid, "method": data.get("dp_method") or method,
-                                 "note": "Pembayaran awal", "by": user["name"]})
+                                 "bank": sale["transfer_bank"], "note": "Pembayaran awal", "by": user["name"]})
     sale_totals(sale)
     sale["credit_approved"] = sale["balance"] <= 0
     for it in items:
@@ -72,8 +83,10 @@ async def post_sale(body: dict, user=Depends(get_user)):
 @router.get("/sales")
 async def list_sales(q: str = "", customer_id: str = "", status: str = "", payment_status: str = "",
                      date_field: str = "date", date_from: str = "", date_to: str = "", include_void: bool = False,
-                     only_void: bool = False, user=Depends(get_user)):
+                     only_void: bool = False, bank_id: str = "", user=Depends(get_user)):
     query = {"voided": True} if only_void else {} if include_void else {"voided": {"$ne": True}}
+    if bank_id:
+        query["$and"] = [{"$or": [{"transfer_bank.id": bank_id}, {"payments.bank.id": bank_id}]}]
     if customer_id:
         query["customer.id"] = customer_id
     if status:
@@ -180,7 +193,8 @@ async def add_payment(sid: str, body: dict, user=Depends(get_user)):
     if amount <= 0 or amount > sale["balance"] + 0.5:
         raise HTTPException(400, "Nominal pelunasan tidak valid")
     sale["payments"].append({"id": uid(), "date": body.get("date") or today(), "amount": amount,
-                             "method": body.get("method", "Tunai"), "note": body.get("note", "Pelunasan"), "by": user["name"]})
+                             "method": body.get("method", "Tunai"), "note": body.get("note", "Pelunasan"), "by": user["name"],
+                             "bank": await resolve_bank(body.get("bank_id")) if body.get("method") == "Transfer" else None})
     sale_totals(sale)
     await db.sales.replace_one({"id": sid}, sale)
     return out(sale, user)

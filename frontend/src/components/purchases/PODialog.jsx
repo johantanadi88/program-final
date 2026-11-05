@@ -68,6 +68,7 @@ export function PODialog({ po, open, onClose, onSaved }) {
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           <Field label="Supplier"><Sel testid="po-supplier-select" value={f.supplier_id} onChange={(v) => setF({ ...f, supplier_id: v })} options={suppliers.map((s) => ({ value: s.id, label: `${s.name} (${s.prefix})` }))} /></Field>
           <Field label="Tanggal"><Input type="date" data-testid="po-date-input" value={f.date} onChange={(e) => setF({ ...f, date: e.target.value })} /></Field>
+          <Field label="Rencana Kirim Pabrik (ETA)"><Input type="date" data-testid="po-eta-input" value={f.eta_date || ""} onChange={(e) => setF({ ...f, eta_date: e.target.value || null })} /></Field>
           <Field label="Gudang Tujuan"><Sel testid="po-warehouse-select" value={f.warehouse} onChange={(v) => setF({ ...f, warehouse: v })} options={warehouses.map((w) => ({ value: w.code, label: `${w.code} - ${w.name}` }))} /></Field>
           <Field label="Status Bayar"><Sel testid="po-paid-status-select" value={f.paid_status} onChange={(v) => setF({ ...f, paid_status: v })} options={PAID} /></Field>
           <Field label="Sudah Dibayar (Rp)"><Input type="number" data-testid="po-paid-amount-input" value={f.paid_amount ?? 0} onChange={(e) => setF({ ...f, paid_amount: e.target.value })} /></Field>

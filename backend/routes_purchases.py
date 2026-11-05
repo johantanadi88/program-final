@@ -87,7 +87,8 @@ async def create_po(body: dict, user=Depends(require_admin)):
           "supplier_name": sup["name"], "date": body.get("date") or today(), "warehouse": body.get("warehouse", "G1"),
           "items": await build_items(body.get("items", [])), "receive_status": "Draft",
           "paid_status": body.get("paid_status", "Belum Bayar"), "paid_amount": f(body.get("paid_amount")),
-          "total_manual": body.get("total_manual"), "status_log": [], "voided": False, "notes": body.get("notes", ""),
+          "total_manual": body.get("total_manual"), "eta_date": body.get("eta_date") or None,
+          "status_log": [], "voided": False, "notes": body.get("notes", ""),
           "created_by": user["name"], "created_at": now_iso()}
     if not po["items"]:
         raise HTTPException(400, "Item PO masih kosong")
@@ -110,7 +111,7 @@ async def edit_po(pid: str, body: dict, user=Depends(require_admin)):
         for o in removed:
             await adjust_stock(o.get("product_id"), po.get("stock_wh"), -f(o.get("stock_applied")))
         po["items"] = await build_items(body["items"])
-    for k in ("date", "notes", "paid_status", "paid_amount", "total_manual", "warehouse"):
+    for k in ("date", "eta_date", "notes", "paid_status", "paid_amount", "total_manual", "warehouse"):
         if k in body:
             po[k] = body[k]
     po_totals(po)
